@@ -24,9 +24,7 @@ type Card struct {
 	raw byte
 }
 
- var ErrorCard Card{
-	 raw:0,
-	}
+var ErrorCard = Card{raw: 0}
 
 const (
 	//操作掩码
@@ -34,7 +32,6 @@ const (
 	CARD_RANK_MASK = 0x0F //0000 1111
 
 	// ErrorCard Card =0x00
-	
 
 	UNKNOW  CardSuit = 0
 	DIAMOND CardSuit = 1
@@ -123,4 +120,8 @@ func (c *Card) Valid() bool {
 
 func (c *Card) String() string {
 	return string([]byte{suits[c.Suit()], ranks[c.Rank()]})
+}
+
+func (c *Card) Byte() byte {
+	return c.raw
 }

@@ -103,7 +103,7 @@ func (d *Cards) Shuffle() {
 func (d *Cards) ToBytes() []byte {
 	ret := make([]byte, len(*d))
 	for i, v := range *d {
-		ret[i] = byte(v)
+		ret[i] = v.Byte()
 	}
 	return ret
 }

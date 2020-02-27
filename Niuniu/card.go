@@ -1,8 +1,6 @@
 package Niuniu
 
 import (
-	"fmt"
-
 	"github.com/Ajenpan/chinese_poker_go/poker"
 )
 
@@ -41,16 +39,19 @@ const (
 	BULL_FOURBOMB   NNType = 11 //炸弹牛
 )
 
-//func (nn *NNDeck) DealHandCards() NNHandCards {
-// return NNHandCards(nn.DealCards(maxHandCardCout))
-//}
-
-func (nn *NNHandCards) BestType() {
-	b := poker.Card(0)
-	a := poker.Card(0)
-
-	fmt.Println(a, b)
-	if a > b {
-
-	}
+func (nn *NNDeck) DealHandCards() *NNHandCards {
+	cards := nn.DealCards(maxHandCardCout)
+	ret := &NNHandCards{}
+	ret.Cards = cards
+	return ret
 }
+
+// func (nn *NNHandCards) BestType() {
+// 	b := poker.Card(0)
+// 	a := poker.Card(0)
+
+// 	fmt.Println(a, b)
+// 	if a > b {
+
+// 	}
+// }
