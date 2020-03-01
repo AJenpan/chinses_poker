@@ -16,6 +16,10 @@ shuffle 洗牌
 //Cards a list of card
 type Cards []Card
 
+func CreateEmpty() Cards {
+	return []Card{}
+}
+
 //CreateDeck create a pack of cards
 func CreateDeck() Cards {
 	deck := Cards{}
@@ -92,6 +96,27 @@ func (d *Cards) BrickDeck(n Cards) {
 	*d = append(*d, n...)
 }
 
+func (d *Cards) Remove(index int) {
+	if index >= d.Size() {
+		return
+	}
+	*d = append((*d)[:index], (*d)[index+1:]...)
+}
+
+func (d *Cards) RemoveCard(c Card) {
+	for i, v := range *d {
+		if v.Byte() == c.Byte() {
+			d.Remove(i)
+			return
+		}
+	}
+}
+
+func (d Cards) Copy() Cards {
+	a := Cards{}
+	return append(a, d...)
+}
+
 //Shuffle 洗牌
 func (d *Cards) Shuffle() {
 	// rand.Seed(time.Now().UnixNano())
@@ -100,22 +125,20 @@ func (d *Cards) Shuffle() {
 	})
 }
 
-func (d *Cards) ToBytes() []byte {
-	ret := make([]byte, len(*d))
-	for i, v := range *d {
+func (d Cards) ToBytes() []byte {
+	ret := make([]byte, len(d))
+	for i, v := range d {
 		ret[i] = v.Byte()
 	}
 	return ret
 }
 
-func (d *Cards) String() string {
+func (d Cards) String() string {
 	ret := ""
-
-	if len(*d) < 1 {
+	if d.Size() < 1 {
 		return ret
 	}
-
-	for _, card := range *d {
+	for _, card := range d {
 		ret += card.String()
 		ret += " "
 	}
@@ -124,4 +147,8 @@ func (d *Cards) String() string {
 
 func (d *Cards) Size() int {
 	return len(*d)
+}
+
+func (d Cards) Len() int {
+	return len(d)
 }
