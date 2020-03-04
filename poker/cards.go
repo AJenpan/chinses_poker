@@ -3,6 +3,7 @@ package poker
 import (
 	"math/rand"
 	"strings"
+	"time"
 )
 
 /*
@@ -86,12 +87,11 @@ func (d *Cards) DealCards(n int) (ret Cards) {
 	return
 }
 
-//合牌
+//BrickCard
 func (d *Cards) BrickCard(n Card) {
 	*d = append(*d, n)
 }
 
-//合牌
 func (d *Cards) BrickDeck(n Cards) {
 	*d = append(*d, n...)
 }
@@ -119,13 +119,13 @@ func (d Cards) Copy() Cards {
 
 //Shuffle 洗牌
 func (d *Cards) Shuffle() {
-	// rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(*d), func(i, j int) {
 		(*d)[i], (*d)[j] = (*d)[j], (*d)[i]
 	})
 }
 
-func (d Cards) ToBytes() []byte {
+func (d Cards) Bytes() []byte {
 	ret := make([]byte, len(d))
 	for i, v := range d {
 		ret[i] = v.Byte()

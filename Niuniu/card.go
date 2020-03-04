@@ -1,8 +1,6 @@
 package Niuniu
 
 import (
-	"fmt"
-
 	"github.com/Ajenpan/chinese_poker_go/poker"
 )
 
@@ -29,11 +27,11 @@ const (
 )
 
 // type NNCards poker.Cards
-
 type NNHandCards struct {
 	poker.Cards
-	typ   NNType
-	power poker.Card
+	typ       NNType
+	power     poker.Card
+	calculate bool
 }
 
 type NNDeck struct {
@@ -50,8 +48,161 @@ func (nn *NNDeck) DealHandCards() *NNHandCards {
 	cards := nn.DealCards(maxHandCardCout)
 	ret := &NNHandCards{}
 	ret.Cards = cards
-	ret.calculate()
+	ret.calculate = false
 	return ret
+}
+
+func IsBull(cards *poker.Cards) bool {
+	if cards.Size() != 3 {
+		return false
+	}
+	return calculatePoint(cards)%10 == 0
+}
+
+func (c *NNHandCards) Type() NNType {
+	return c.typ
+}
+
+func (c *NNHandCards) Power() poker.Card {
+	return c.power
+}
+
+//Compare return c >= other?
+func (c *NNHandCards) Compare(other *NNHandCards) bool {
+	if c.typ == ERROR_TYPE || other.typ == ERROR_TYPE {
+		panic("error type")
+	}
+	if c.typ > other.typ {
+		return true
+	} else if c.typ == other.typ {
+		return compareCard(c.power, other.power)
+	}
+	return false
+}
+
+func (c *NNHandCards) isFourBomb() bool {
+	count := make(map[int]int)
+	for _, v := range c.Cards {
+		if _, ok := count[v.RankInt()]; ok {
+			count[v.RankInt()]++
+		} else {
+			count[v.RankInt()] = 1
+		}
+	}
+	for r, v := range count {
+		if v == 4 {
+			c.typ = BULL_FOURBOMB
+			c.power = poker.CreateCard(poker.SPADE, poker.CardRank(r))
+			return true
+		}
+	}
+	return false
+}
+
+func (c *NNHandCards) isFiveSmall() bool {
+	point := calculatePoint(&c.Cards)
+	if point > 10 {
+		return false
+	}
+	for _, v := range c.Cards {
+		if v.RankInt() > 5 {
+			return false
+		}
+	}
+	c.typ = BULL_FIVESMALL
+	return true
+}
+
+func (c *NNHandCards) isFiveFlower() bool {
+	if calculatePoint(&c.Cards) != 50 {
+		return false
+	}
+	for _, v := range c.Cards {
+		if v.RankInt() <= 10 {
+			return false
+		}
+	}
+	c.typ = BULL_FIVEFLOWER
+	return true
+}
+
+func (c *NNHandCards) IsCalculate() bool {
+	return c.calculate
+}
+
+func (c *NNHandCards) Calculate() {
+	if c.calculate {
+		return
+	}
+	c.calculate = true
+	if c.isFourBomb() {
+		return
+	}
+	if c.isFiveFlower() {
+		return
+	}
+	if c.isFiveSmall() {
+		return
+	}
+
+	ret := &[]poker.Cards{}
+	combine(c.Cards, poker.CreateEmpty(), ret, 3)
+
+	bestType := NO_POINT
+
+	for _, v := range *(ret) {
+		typ := NO_POINT
+
+		if calculatePoint(&v)%10 == 0 {
+			temp := c.Cards.Copy()
+			for _, c := range v {
+				temp.RemoveCard(c)
+			}
+			point := calculatePoint(&temp) % 10
+			if point == 0 {
+				point = 10
+			}
+			typ = NNType(point)
+		}
+
+		if typ > bestType {
+			bestType = typ
+		}
+	}
+	if bestType == NO_POINT {
+		bestPower := poker.CreateCard(poker.DIAMOND, 1)
+		for _, v := range c.Cards {
+			if compareCard(v, bestPower) {
+				bestPower = v
+			}
+		}
+		c.power = bestPower
+	}
+	c.typ = bestType
+}
+
+func calculatePoint(cards *poker.Cards) int {
+	v := 0
+	for _, c := range *cards {
+		if c.RankInt() > 10 {
+			v += 10
+		} else {
+			v += c.RankInt()
+		}
+	}
+	return v
+}
+
+//rank compare :k>q>j>10>9>8>7>6>5>4>3>2>a
+//suit compare :黑桃>红桃>梅花>方块
+//compareCard return a > b ?
+func compareCard(a, b poker.Card) bool {
+	if a.RankInt() > b.RankInt() {
+		return true
+	} else if a.RankInt() == b.RankInt() {
+		return a.Suit() > b.Suit()
+	}
+	return false
 }
 
 //TODO: re-write with go-style
@@ -76,143 +227,4 @@ func combine(raw poker.Cards, subset poker.Cards, out *[]poker.Cards, m int) {
 		}
 	}
 	return
-}
-
-func IsBull(cards *poker.Cards) bool {
-	if cards.Size() != 3 {
-		return false
-	}
-	return calculatePoint(cards)%10 == 0
-}
-
-func calculatePoint(cards *poker.Cards) int {
-	v := 0
-	for _, c := range *cards {
-		if c.RankInt() > 10 {
-			v += 10
-		} else {
-			v += c.RankInt()
-		}
-	}
-	return v
-}
-
-func (card *NNHandCards) isFourBomb() bool {
-	count := make(map[int]int)
-	for _, v := range card.Cards {
-		if _, ok := count[v.RankInt()]; ok {
-			count[v.RankInt()]++
-		} else {
-			count[v.RankInt()] = 1
-		}
-	}
-	for r, v := range count {
-		if v == 4 {
-			card.typ = BULL_FOURBOMB
-			card.power = poker.CreateCard(poker.SPADE, poker.CardRank(r))
-			return true
-		}
-	}
-	return false
-}
-
-func (card *NNHandCards) isFiveSmall() bool {
-	point := calculatePoint(&card.Cards)
-	if point > 10 {
-		return false
-	}
-	for _, v := range card.Cards {
-		if v.RankInt() > 5 {
-			return false
-		}
-	}
-	card.typ = BULL_FIVESMALL
-	return true
-}
-
-func (card *NNHandCards) isFiveFlower() bool {
-	if calculatePoint(&card.Cards) != 50 {
-		return false
-	}
-	for _, v := range card.Cards {
-		if v.RankInt() <= 10 {
-			return false
-		}
-	}
-	card.typ = BULL_FIVEFLOWER
-	return true
-}
-
-func calculate(card *NNHandCards, subCards *poker.Cards) NNType {
-	if subCards.Size() != 3 {
-		return ERROR_TYPE
-	}
-
-	if IsBull(subCards) {
-
-	} else {
-		return NO_POINT
-	}
-
-	return ERROR_TYPE
-}
-
-//数字比较： k>q>j>10>9>8>7>6>5>4>3>2>a。
-//花色比较：黑桃>红桃>梅花>方块。
-func compareCard(a, b poker.Card) bool {
-	if a.RankInt() > b.RankInt() {
-		return true
-	} else if a.RankInt() == b.RankInt() {
-		return a.Suit() > b.Suit()
-	}
-	return false
-}
-
-func (nn *NNHandCards) calculate() {
-
-	if nn.isFourBomb() {
-		return
-	}
-	if nn.isFiveFlower() {
-		return
-	}
-	if nn.isFiveSmall() {
-		return
-	}
-
-	fmt.Println(nn.Cards)
-	ret := &[]poker.Cards{}
-	combine(nn.Cards, poker.CreateEmpty(), ret, 3)
-
-	bestType := NO_POINT
-
-	for _, v := range *(ret) {
-		typ := NO_POINT
-
-		if calculatePoint(&v)%10 == 0 {
-			temp := nn.Cards.Copy()
-			for _, c := range v {
-				temp.RemoveCard(c)
-			}
-			point := calculatePoint(&temp) % 10
-			if point == 0 {
-				point = 10
-			}
-			typ = NNType(point)
-		}
-
-		if typ > bestType {
-			bestType = typ
-		}
-	}
-	if bestType == NO_POINT {
-		bestPower := poker.CreateCard(poker.DIAMOND, 1)
-		for _, v := range nn.Cards {
-			if compareCard(v, bestPower) {
-				bestPower = v
-			}
-		}
-		nn.power = bestPower
-	}
-	nn.typ = bestType
 }

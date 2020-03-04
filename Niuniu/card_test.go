@@ -7,7 +7,7 @@ import (
 )
 
 func TestNiuniu(t *testing.T) {
-	cards := NNHandCards{}
+
 	type handcards struct {
 		cards string
 		typ   NNType
@@ -24,9 +24,11 @@ func TestNiuniu(t *testing.T) {
 	}
 
 	for _, c := range list {
+		cards := NNHandCards{}
 		cards.Cards = poker.StringToCards(c.cards)
-		cards.calculate()
+		cards.Calculate()
 		if cards.typ != c.typ {
+			t.Logf("card %s type:%v", cards.String(), cards.typ)
 			t.Fail()
 		}
 	}
