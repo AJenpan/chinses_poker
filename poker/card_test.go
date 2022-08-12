@@ -5,7 +5,6 @@ import (
 )
 
 func TestCard(t *testing.T) {
-
 	for s := 1; s <= 4; s++ {
 		for r := 1; r <= 13; r++ {
 			card := CreateCard(CardSuit(s), CardRank(r))
@@ -21,13 +20,9 @@ func TestCard(t *testing.T) {
 			if int(card.Suit()) == s {
 				t.FailNow()
 			}
-			if card != ErrorCard {
+			if card != EmptyCard {
 				t.FailNow()
 			}
 		}
 	}
-}
-
-func TestString2Card(t *testing.T) {
-
 }

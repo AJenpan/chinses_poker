@@ -3,16 +3,16 @@ package main
 import (
 	"fmt"
 
-	"github.com/Ajenpan/chinese_poker_go/Niuniu"
+	"github.com/ajenpan/poker_algorithm/niuniu"
 )
 
 func main() {
 	const playerCount = 5
 
 	type Player struct {
-		cards *Niuniu.NNHandCards
+		cards *niuniu.NNHandCards
 	}
-	deck := Niuniu.NewNNDeck()
+	deck := niuniu.NewNNDeck()
 	deck.Shuffle()
 
 	players := []Player{}

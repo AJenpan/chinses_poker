@@ -1,7 +1,7 @@
-package Niuniu
+package niuniu
 
 import (
-	"github.com/Ajenpan/chinese_poker_go/poker"
+	"github.com/ajenpan/poker_algorithm/poker"
 )
 
 const maxHandCardCout = 5
@@ -28,14 +28,14 @@ const (
 
 // type NNCards poker.Cards
 type NNHandCards struct {
-	poker.Cards
+	*poker.Cards
 	typ       NNType
 	power     poker.Card
 	calculate bool
 }
 
 type NNDeck struct {
-	poker.Cards
+	*poker.Cards
 }
 
 func NewNNDeck() *NNDeck {
@@ -82,7 +82,7 @@ func (c *NNHandCards) Compare(other *NNHandCards) bool {
 
 func (c *NNHandCards) isFourBomb() bool {
 	count := make(map[int]int)
-	for _, v := range c.Cards {
+	for _, v := range c.Cards.Inner {
 		if _, ok := count[v.RankInt()]; ok {
 			count[v.RankInt()]++
 		} else {
@@ -100,11 +100,11 @@ func (c *NNHandCards) isFourBomb() bool {
 }
 
 func (c *NNHandCards) isFiveSmall() bool {
-	point := calculatePoint(&c.Cards)
+	point := calculatePoint(c.Cards)
 	if point > 10 {
 		return false
 	}
-	for _, v := range c.Cards {
+	for _, v := range c.Cards.Inner {
 		if v.RankInt() > 5 {
 			return false
 		}
@@ -114,10 +114,10 @@ func (c *NNHandCards) isFiveSmall() bool {
 }
 
 func (c *NNHandCards) isFiveFlower() bool {
-	if calculatePoint(&c.Cards) != 50 {
+	if calculatePoint(c.Cards) != 50 {
 		return false
 	}
-	for _, v := range c.Cards {
+	for _, v := range c.Cards.Inner {
 		if v.RankInt() <= 10 {
 			return false
 		}
@@ -145,20 +145,20 @@ func (c *NNHandCards) Calculate() {
 		return
 	}
 
-	ret := &[]poker.Cards{}
-	combine(c.Cards, poker.CreateEmpty(), ret, 3)
+	ret := &[]*poker.Cards{}
+	combine(c.Cards, poker.NewEmptyCards(), ret, 3)
 
 	bestType := NO_POINT
 
 	for _, v := range *(ret) {
 		typ := NO_POINT
 
-		if calculatePoint(&v)%10 == 0 {
+		if calculatePoint(v)%10 == 0 {
 			temp := c.Cards.Copy()
-			for _, c := range v {
+			for _, c := range v.Inner {
 				temp.RemoveCard(c)
 			}
-			point := calculatePoint(&temp) % 10
+			point := calculatePoint(temp) % 10
 			if point == 0 {
 				point = 10
 			}
@@ -171,7 +171,7 @@ func (c *NNHandCards) Calculate() {
 	}
 	if bestType == NO_POINT {
 		bestPower := poker.CreateCard(poker.DIAMOND, 1)
-		for _, v := range c.Cards {
+		for _, v := range c.Cards.Inner {
 			if compareCard(v, bestPower) {
 				bestPower = v
 			}
@@ -183,7 +183,7 @@ func (c *NNHandCards) Calculate() {
 
 func calculatePoint(cards *poker.Cards) int {
 	v := 0
-	for _, c := range *cards {
+	for _, c := range cards.Inner {
 		if c.RankInt() > 10 {
 			v += 10
 		} else {
@@ -193,8 +193,8 @@ func calculatePoint(cards *poker.Cards) int {
 	return v
 }
 
-//rank compare :k>q>j>10>9>8>7>6>5>4>3>2>a
-//suit compare :黑桃>红桃>梅花>方块
+//rank compare : k>q>j>10>9>8>7>6>5>4>3>2>a
+//suit compare : 黑桃>红桃>梅花>方块
 //compareCard return a > b ?
 func compareCard(a, b poker.Card) bool {
 	if a.RankInt() > b.RankInt() {
@@ -206,7 +206,7 @@ func compareCard(a, b poker.Card) bool {
 }
 
 //TODO: re-write with go-style
-func combine(raw poker.Cards, subset poker.Cards, out *[]poker.Cards, m int) {
+func combine(raw *poker.Cards, subset *poker.Cards, out *[]*poker.Cards, m int) {
 	if raw.Size() < 1 {
 		return
 	}
@@ -218,7 +218,7 @@ func combine(raw poker.Cards, subset poker.Cards, out *[]poker.Cards, m int) {
 	cards := raw.Copy()
 	for i := 0; i < raw.Size(); i++ {
 		temp := subset.Copy()
-		temp.BrickCard(cards[0])
+		temp.BrickCard(cards.Inner[0])
 		cards.Remove(0)
 		if m != temp.Size() {
 			combine(cards, temp, out, m)
@@ -226,5 +226,4 @@ func combine(raw poker.Cards, subset poker.Cards, out *[]poker.Cards, m int) {
 			*out = append(*out, temp)
 		}
 	}
-	return
 }

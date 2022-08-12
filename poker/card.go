@@ -1,16 +1,15 @@
 package poker
 
-/*
-To chinses:
-diamond 方块
-club 梅花
-heart 红桃
-spade 黑桃
+// suit to chinses:
+// diamond 方块
+// club    梅花
+// heart   红桃
+// spade   黑桃
 
-大小王 joker
-two,three,four,five,six,seven,eight,nine,ten.
-J是Jack Q是Queen K是King A是Ace
-*/
+// rank to chinses:
+// 1-10  : two,three,four,five,six,seven,eight,nine,ten.
+// J-A   : Jack,Queen,King,Ace
+// joker : 大小王
 
 //CardSuit suit of card
 type CardSuit byte
@@ -19,19 +18,14 @@ type CardSuit byte
 type CardRank byte
 
 //Card a card of poker,memony value 4bits == |--2 bits suit -- 2 bits rank--|
-// type Card byte
-type Card struct {
-	raw byte
-}
-
-var ErrorCard = Card{raw: 0}
+type Card byte
 
 const (
-	//操作掩码
+	EmptyCard Card = 0x00
+
+	// mask
 	CARD_SUIT_MASK = 0xF0 //1111 0000
 	CARD_RANK_MASK = 0x0F //0000 1111
-
-	// ErrorCard Card =0x00
 
 	UNKNOW  CardSuit = 0
 	DIAMOND CardSuit = 1
@@ -47,17 +41,17 @@ var ranks = []byte("?A23456789TJQK")
 //CreateCard by suit and rank
 func CreateCard(suit CardSuit, rank CardRank) Card {
 	if !(suit.Valid() && rank.Valid()) {
-		return ErrorCard
+		return EmptyCard
 	}
 	raw := byte(suit) << 4
 	raw |= byte(rank)
-	//(Card(suit) << 4) | Card(rank)
-	return Card{raw: raw}
+
+	return Card(raw)
 }
 
 func StringToCard(str string) Card {
 	if len(str) != 2 {
-		return ErrorCard
+		return EmptyCard
 	}
 	suit := CardSuit(0)
 	for i, s := range suits {
@@ -74,7 +68,7 @@ func StringToCard(str string) Card {
 		}
 	}
 	if !(suit.Valid() && rank.Valid()) {
-		return ErrorCard
+		return EmptyCard
 	}
 	return CreateCard(suit, rank)
 }
@@ -83,11 +77,11 @@ func StringToCard(str string) Card {
 func ByteToCard(b byte) Card {
 	rank := CardRank(b | CARD_RANK_MASK)
 	if !rank.Valid() {
-		return ErrorCard
+		return EmptyCard
 	}
 	suit := CardSuit(b | CARD_SUIT_MASK)
 	if !suit.Valid() {
-		return ErrorCard
+		return EmptyCard
 	}
 	return CreateCard(suit, rank)
 }
@@ -101,27 +95,27 @@ func (s CardSuit) Valid() bool {
 }
 
 //Suit return card's suit
-func (c *Card) Suit() CardSuit {
-	return CardSuit(c.raw >> 4)
+func (c Card) Suit() CardSuit {
+	return CardSuit(byte(c) >> 4)
 }
 
 //Rank return card's rank
-func (c *Card) Rank() CardRank {
-	return CardRank(c.raw & CARD_RANK_MASK)
+func (c Card) Rank() CardRank {
+	return CardRank(c & CARD_RANK_MASK)
 }
 
-func (c *Card) RankInt() int {
+func (c Card) RankInt() int {
 	return int(c.Rank())
 }
 
-func (c *Card) Valid() bool {
+func (c Card) Valid() bool {
 	return c.Suit().Valid() && c.Rank().Valid()
 }
 
-func (c *Card) String() string {
+func (c Card) String() string {
 	return string([]byte{suits[c.Suit()], ranks[c.Rank()]})
 }
 
-func (c *Card) Byte() byte {
-	return c.raw
+func (c Card) Byte() byte {
+	return byte(c)
 }

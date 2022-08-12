@@ -1,9 +1,9 @@
-package Niuniu
+package niuniu
 
 import (
 	"testing"
 
-	"github.com/Ajenpan/chinese_poker_go/poker"
+	"github.com/ajenpan/poker_algorithm/poker"
 )
 
 func TestNiuniu(t *testing.T) {
