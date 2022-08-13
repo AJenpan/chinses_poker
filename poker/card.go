@@ -23,11 +23,11 @@ type Card byte
 const (
 	EmptyCard Card = 0x00
 
-	// mask
-	CARD_SUIT_MASK = 0xF0 //1111 0000
-	CARD_RANK_MASK = 0x0F //0000 1111
+	//Mask
+	CARD_SUIT_MASK = byte(0xF0) //1111 0000
+	CARD_RANK_MASK = byte(0x0F) //0000 1111
 
-	UNKNOW  CardSuit = 0
+	EMPTY   CardSuit = 0
 	DIAMOND CardSuit = 1
 	CLUB    CardSuit = 2
 	HEART   CardSuit = 3
@@ -35,8 +35,8 @@ const (
 	JOKER   CardSuit = 5
 )
 
-var suits = []byte("?DCHSJ")
-var ranks = []byte("?A23456789TJQK")
+var Suits = []byte("?DCHSJ")
+var Ranks = []byte("?A23456789TJQK")
 
 //CreateCard by suit and rank
 func CreateCard(suit CardSuit, rank CardRank) Card {
@@ -53,37 +53,30 @@ func StringToCard(str string) Card {
 	if len(str) != 2 {
 		return EmptyCard
 	}
-	suit := CardSuit(0)
-	for i, s := range suits {
-		if s == str[0] {
-			suit = CardSuit(i)
-			break
-		}
-	}
 	rank := CardRank(0)
-	for i, r := range ranks {
-		if r == str[1] {
+	for i, r := range Ranks {
+		if r == str[0] {
 			rank = CardRank(i)
 			break
 		}
 	}
-	if !(suit.Valid() && rank.Valid()) {
-		return EmptyCard
+	suit := CardSuit(0)
+	for i, s := range Suits {
+		if s == str[1] {
+			suit = CardSuit(i)
+			break
+		}
 	}
 	return CreateCard(suit, rank)
 }
 
 //ByteToCard byte to card
 func ByteToCard(b byte) Card {
-	rank := CardRank(b | CARD_RANK_MASK)
-	if !rank.Valid() {
+	r := Card(b)
+	if !r.Valid() {
 		return EmptyCard
 	}
-	suit := CardSuit(b | CARD_SUIT_MASK)
-	if !suit.Valid() {
-		return EmptyCard
-	}
-	return CreateCard(suit, rank)
+	return r
 }
 
 func (r CardRank) Valid() bool {
@@ -99,9 +92,13 @@ func (c Card) Suit() CardSuit {
 	return CardSuit(byte(c) >> 4)
 }
 
+func (c Card) SuitInt() int {
+	return int(c.Suit())
+}
+
 //Rank return card's rank
 func (c Card) Rank() CardRank {
-	return CardRank(c & CARD_RANK_MASK)
+	return CardRank(byte(c) & CARD_RANK_MASK)
 }
 
 func (c Card) RankInt() int {
@@ -113,9 +110,17 @@ func (c Card) Valid() bool {
 }
 
 func (c Card) String() string {
-	return string([]byte{suits[c.Suit()], ranks[c.Rank()]})
+	return string([]byte{Ranks[c.Rank()], Suits[c.Suit()]})
 }
 
 func (c Card) Byte() byte {
 	return byte(c)
+}
+
+func (c Card) SetSuit(suit CardSuit) Card {
+	return CreateCard(suit, c.Rank())
+}
+
+func (c Card) SetRank(rank CardRank) Card {
+	return CreateCard(c.Suit(), rank)
 }

@@ -1,6 +1,9 @@
 package poker
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 //CreateDeck create a pack of cards
 func CreateDeck() *Cards {
@@ -23,17 +26,17 @@ func CreateDeckWithoutJoker() *Cards {
 	return deck
 }
 
-func StringToCards(str string) *Cards {
+func StringToCards(str string) (*Cards, error) {
 	cs := strings.Split(str, " ")
 	cards := NewEmptyCards()
 	for _, v := range cs {
 		card := StringToCard(v)
 		if !card.Valid() {
-			return nil
+			return nil, fmt.Errorf("invalid card:%s", v)
 		}
 		cards.BrickCard(card)
 	}
-	return cards
+	return cards, nil
 }
 
 func BytesToCards(raw []byte) *Cards {
