@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
@@ -27,26 +28,28 @@ func CreateDeckWithoutJoker() *Cards {
 }
 
 func StringToCards(str string) (*Cards, error) {
+	str = strings.TrimSpace(str)
 	cs := strings.Split(str, " ")
-	cards := NewEmptyCards()
+	cards := make([]Card, 0, len(cs))
 	for _, v := range cs {
-		card := StringToCard(v)
+		card := CreateCardByString(v)
 		if !card.Valid() {
-			return nil, fmt.Errorf("invalid card:%s", v)
+			return nil, fmt.Errorf("invalid card: %v", v)
 		}
-		cards.BrickCard(card)
+		cards = append(cards, card)
 	}
-	return cards, nil
+	return NewCards(cards), nil
 }
 
-func BytesToCards(raw []byte) *Cards {
-	cards := NewEmptyCards()
+func BytesToCards(raw []byte) (*Cards, error) {
+	raw = bytes.TrimSpace(raw)
+	cards := make([]Card, 0, len(raw))
 	for _, v := range raw {
 		card := ByteToCard(v)
 		if !card.Valid() {
-			return nil
+			return nil, fmt.Errorf("invalid card: %v", v)
 		}
-		cards.BrickCard(card)
+		cards = append(cards, card)
 	}
-	return cards
+	return NewCards(cards), nil
 }

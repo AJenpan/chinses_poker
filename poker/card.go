@@ -1,5 +1,9 @@
 package poker
 
+import (
+	"strings"
+)
+
 // suit to chinses:
 // diamond 方块
 // club    梅花
@@ -11,10 +15,10 @@ package poker
 // J-A   : Jack,Queen,King,Ace
 // joker : 大小王
 
-//CardSuit suit of card
+//CardSuit: suit of card
 type CardSuit byte
 
-//CardRank Rank value of card
+//CardRank: Rank value of card
 type CardRank byte
 
 //Card a card of poker,memony value 4bits == |--2 bits suit -- 2 bits rank--|
@@ -27,6 +31,7 @@ const (
 	CARD_SUIT_MASK = byte(0xF0) //1111 0000
 	CARD_RANK_MASK = byte(0x0F) //0000 1111
 
+	//Suit
 	EMPTY   CardSuit = 0
 	DIAMOND CardSuit = 1
 	CLUB    CardSuit = 2
@@ -34,6 +39,23 @@ const (
 	SPADE   CardSuit = 4
 	JOKER   CardSuit = 5
 )
+
+func (cs CardSuit) Chinses() string {
+	switch cs {
+	case DIAMOND:
+		return "方块"
+	case CLUB:
+		return "梅花"
+	case HEART:
+		return "红桃"
+	case SPADE:
+		return "黑桃"
+	case JOKER:
+		return "王"
+	default:
+		return "无效"
+	}
+}
 
 var Suits = []byte("?DCHSJ")
 var Ranks = []byte("?A23456789TJQK")
@@ -45,11 +67,11 @@ func CreateCard(suit CardSuit, rank CardRank) Card {
 	}
 	raw := byte(suit) << 4
 	raw |= byte(rank)
-
 	return Card(raw)
 }
 
-func StringToCard(str string) Card {
+func CreateCardByString(str string) Card {
+	str = strings.TrimSpace(str)
 	if len(str) != 2 {
 		return EmptyCard
 	}
@@ -123,4 +145,27 @@ func (c Card) SetSuit(suit CardSuit) Card {
 
 func (c Card) SetRank(rank CardRank) Card {
 	return CreateCard(c.Suit(), rank)
+}
+
+func (c Card) Chinses() string {
+	if !c.Valid() {
+		return "空牌"
+	}
+	s := c.Suit()
+	suitStr := s.Chinses()
+	rankStr := string(Ranks[c.Rank()])
+	if rankStr == "T" {
+		rankStr = "10"
+	}
+	if s == JOKER {
+		switch c.Rank() {
+		case 1:
+			return "小王"
+		case 2:
+			return "大王"
+		default:
+			return "空牌"
+		}
+	}
+	return suitStr + string(rankStr)
 }

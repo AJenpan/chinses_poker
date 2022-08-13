@@ -3,6 +3,7 @@ package poker
 import (
 	"math/rand"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -13,12 +14,12 @@ import (
 // shuffle 洗牌
 
 func NewEmptyCards() *Cards {
-	return &Cards{
-		Inner: []Card{},
-	}
+	return &Cards{Inner: make([]Card, 0, 54)}
 }
 
 func NewCards(cards []Card) *Cards {
+	// new := make([]Card, len(cards))
+	// copy(new, cards)
 	return &Cards{Inner: cards}
 }
 
@@ -29,15 +30,24 @@ type Cards struct {
 
 //DealCard deal a card from deck. 发一张牌
 func (d *Cards) DealCard() Card {
-	return d.Pop()
+	return d.PopFront()
 }
 
-func (d *Cards) Pop() Card {
+func (d *Cards) PopFront() Card {
 	if d.Size() < 1 {
 		return EmptyCard
 	}
 	ret := d.Inner[0]
 	d.Inner = d.Inner[1:]
+	return ret
+}
+
+func (d *Cards) PopBack() Card {
+	if d.Size() < 1 {
+		return EmptyCard
+	}
+	ret := d.Inner[d.Size()-1]
+	d.Inner = d.Inner[:d.Size()-1]
 	return ret
 }
 
@@ -64,19 +74,22 @@ func (d *Cards) BrickDeck(n *Cards) {
 	d.Inner = append(d.Inner, n.Inner...)
 }
 
-func (d *Cards) Sort(fn func(i, j int) bool) {
-	if d.Size() <= 1 {
-		return
-	}
-	sort.Slice(d.Inner, fn)
+// order is AD AC AH AS 2D
+func (d *Cards) SortByRank() {
+	sort.Sort(ByRank(d.Inner))
 }
 
+// order is AD 2D 3D 4D 5D
+func (d *Cards) SortBySuit() {
+	sort.Sort(BySuit(d.Inner))
+}
+
+// order is AD 2D 3D 4D 5D
 func (d *Cards) SortByByte() {
-	d.Sort(func(i, j int) bool {
+	sort.Slice(d.Inner, func(i, j int) bool {
 		return byte(d.Inner[i]) < byte(d.Inner[j])
 	})
 }
-
 func (d *Cards) Range(fn func(i int, c Card)) {
 	for i, v := range d.Inner {
 		fn(i, v)
@@ -88,6 +101,10 @@ func (d *Cards) Remove(index int) {
 		return
 	}
 	d.Inner = append(d.Inner[:index], d.Inner[index+1:]...)
+}
+
+func (d *Cards) Clear() {
+	d.Inner = d.Inner[:0]
 }
 
 func (d *Cards) Get(index int) Card {
@@ -113,7 +130,7 @@ func (d *Cards) Copy() *Cards {
 	return new
 }
 
-func (d *Cards) Contains(c Card) bool {
+func (d *Cards) Contain(c Card) bool {
 	for _, v := range d.Inner {
 		if v.Byte() == c.Byte() {
 			return true
@@ -150,10 +167,66 @@ func (d *Cards) String() string {
 	return ret[:len(ret)-1]
 }
 
+func (d *Cards) Chinese() string {
+	if d.IsEmpty() {
+		return ""
+	}
+	sz := make([]string, d.Size())
+	for i, card := range d.Inner {
+		sz[i] = card.Chinses()
+	}
+	return strings.Join(sz, " ")
+}
+
 func (d *Cards) Size() int {
 	return len(d.Inner)
 }
 
 func (d *Cards) IsEmpty() bool {
 	return len(d.Inner) == 0
+}
+
+func (d *Cards) Sub(s *Cards) *Cards {
+	dm := d.ToMap()
+	for _, v := range s.Inner {
+		c, has := dm[v]
+		if !has {
+			continue
+		}
+		if c > 0 {
+			c = c - 1
+			dm[v] = c
+		}
+		if c == 0 {
+			delete(dm, v)
+		}
+	}
+
+	new := make([]Card, 0, len(dm))
+	for k, v := range dm {
+		for i := 0; i < v; i++ {
+			new = append(new, k)
+		}
+	}
+	d.Inner = new
+	return d
+}
+
+// map with card as key and count as value
+func (d *Cards) ToMap() map[Card]int {
+	ret := make(map[Card]int, d.Size())
+	for _, v := range d.Inner {
+		ret[v]++
+	}
+	return ret
+}
+
+// 交集
+func (d *Cards) Intersect(other *Cards) []Card {
+	return nil
+}
+
+// 求相对补集  this - other, 即是返回在other中没有的元素, 如 i{1,2,3}, other{2,3}, return{1}
+func (d *Cards) Complementary(other *Cards) []Card {
+	return nil
 }
