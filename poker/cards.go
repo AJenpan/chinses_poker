@@ -23,12 +23,12 @@ func NewCards(cards []Card) *Cards {
 	return &Cards{Inner: cards}
 }
 
-//Cards a list of card
+// Cards a list of card
 type Cards struct {
 	Inner []Card
 }
 
-//DealCard deal a card from deck. 发一张牌
+// DealCard deal a card from deck. 发一张牌
 func (d *Cards) DealCard() Card {
 	return d.PopFront()
 }
@@ -51,7 +51,7 @@ func (d *Cards) PopBack() Card {
 	return ret
 }
 
-//DealCards deal n cards from deck. 发多张牌
+// DealCards deal n cards from deck. 发多张牌
 func (d *Cards) DealCards(n int) *Cards {
 	ret := NewEmptyCards()
 	if n >= len(d.Inner) {
@@ -65,7 +65,7 @@ func (d *Cards) Push(n Card) {
 	d.Inner = append(d.Inner, n)
 }
 
-//BrickCard 加入一张牌
+// BrickCard 加入一张牌
 func (d *Cards) BrickCard(n Card) {
 	d.Inner = append(d.Inner, n)
 }
@@ -114,7 +114,7 @@ func (d *Cards) Get(index int) Card {
 	return d.Inner[index]
 }
 
-//Remove card from deck. 删除一张牌
+// Remove card from deck. 删除一张牌
 func (d *Cards) RemoveCard(c Card) {
 	for i, v := range d.Inner {
 		if v.Byte() == c.Byte() {
@@ -124,7 +124,7 @@ func (d *Cards) RemoveCard(c Card) {
 	}
 }
 
-func (d *Cards) Copy() *Cards {
+func (d *Cards) Clone() *Cards {
 	new := &Cards{Inner: make([]Card, len(d.Inner))}
 	copy(new.Inner, d.Inner)
 	return new
@@ -139,7 +139,7 @@ func (d *Cards) Contain(c Card) bool {
 	return false
 }
 
-//Shuffle 洗牌
+// Shuffle 洗牌
 func (d *Cards) Shuffle() {
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(d.Size(), func(i, j int) {
@@ -173,7 +173,7 @@ func (d *Cards) Chinese() string {
 	}
 	sz := make([]string, d.Size())
 	for i, card := range d.Inner {
-		sz[i] = card.Chinses()
+		sz[i] = card.Chinese()
 	}
 	return strings.Join(sz, " ")
 }

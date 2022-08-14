@@ -4,252 +4,110 @@ import (
 	"github.com/ajenpan/poker_algorithm/poker"
 )
 
-type Deck struct {
-	*poker.Cards
+type DeckRate [13][4]float32
+
+type HandCards struct {
+	Cards        *poker.Cards
+	DiscardStack []poker.Card
+
+	ExistRate DeckRate
 }
 
-func NewDeck() *Deck {
-	ret := &Deck{
-		Cards: poker.CreateDeckWithoutJoker(),
+func NewHandCards(cards *poker.Cards) *HandCards {
+	ret := &HandCards{Cards: cards}
+	return ret
+}
+
+// when other discard one, need to update the rate and push the card to discardstack
+func (d *HandCards) OnDiscard(c poker.Card) {
+	d.DiscardStack = append(d.DiscardStack, c)
+	d.ExistRate[c.RankInt()-1][c.Suit()-1] = 0
+}
+
+func (d *HandCards) UpdateDeckRate() {
+	// the full deck, sub discard deck, melds card
+}
+
+func (d *HandCards) DiscardScore(c poker.Card) float32 {
+	const DiscardScoreFix = float32(1000)
+	return (float32(1)-d.HoldpowerRate(c))*10 + (float32(CardPoint(c)) / DiscardScoreFix)
+}
+
+// the rate = set rate + run rate, the higher the rate, the better the hand
+func (d *HandCards) HoldpowerRate(c poker.Card) float32 {
+	return d.TheRunRate(c) + d.TheSetRate(c)
+}
+
+func (d *HandCards) CardGotRate(c poker.Card) float32 {
+	if !c.Valid() {
+		return 0
+	}
+	return d.ExistRate[c.RankInt()-1][c.Suit()-1]
+}
+
+func (d *HandCards) TheSetRate(c poker.Card) float32 {
+	others := make([]poker.Card, 0, 3)
+	for suit := poker.CardSuit(1); suit <= 4; suit++ {
+		if suit == c.Suit() {
+			continue
+		}
+		others = append(others, poker.NewCard(suit, c.Rank()))
+	}
+	// opts := combin.Combinations(3, 2)
+	// 0,1 0,2 1,2
+	rate1 := d.CardGotRate(others[0]) * d.CardGotRate(others[1])
+	rate2 := d.CardGotRate(others[0]) * d.CardGotRate(others[2])
+	rate3 := d.CardGotRate(others[1]) * d.CardGotRate(others[2])
+	return rate1 + rate2 + rate3
+}
+
+func (d *HandCards) TheRunRate(c poker.Card) float32 {
+	// to A, the rate is 2's rate * 3's rate
+	// to 2, the rate is 3's rate * 4's rate + 1's rate * 3's rate
+	// to 3, the rate is 4's rate * 5's rate + 2's rate * 4's rate + 1's rate * 2's rate
+	ret := float32(0.0)
+	for _, v := range [][]int8{{-2, -1}, {-1, 1}, {1, 2}} {
+		card1 := poker.NewCard(c.Suit(), poker.CardRank(int8(c.Rank())+v[0]))
+		card2 := poker.NewCard(c.Suit(), poker.CardRank(int8(c.Rank())+v[1]))
+		ret += d.CardGotRate(card1) * d.CardGotRate(card2)
 	}
 	return ret
 }
 
-// Set：3 or 4 of the same rank
-func IsTheSet(cards *poker.Cards) bool {
-	if cards.Size() < 3 || cards.Size() > 4 {
-		return false
+func (d *HandCards) DiscardOne(cards *poker.Cards) poker.Card {
+	if cards.IsEmpty() {
+		return poker.EmptyCard
 	}
+	badest := cards.Inner[0]
+	badestRate := d.HoldpowerRate(badest)
 	for i := 1; i < cards.Size(); i++ {
-		if cards.Get(i).Rank() != cards.Get(0).Rank() {
-			return false
+		c := cards.Get(i)
+		rate := d.HoldpowerRate(c)
+		if rate < badestRate {
+			badest = c
+			badestRate = rate
 		}
 	}
-	return true
+	return badest
 }
 
-// Run: 3 or more same suited cards in sequence.
-func IsTheRun(cards *poker.Cards) bool {
-	if cards.Size() < 3 {
-		return false
+func (d *HandCards) CheckNeed(c poker.Card) poker.Card {
+	beforeMelds, beforeDeadwood := DetectBest(d.Cards)
+	beforeScore := CardsPoint(beforeDeadwood)
+
+	newCards := d.Cards.Clone()
+	newCards.Push(c)
+
+	newMelds, newDeadwood := DetectBest(newCards)
+	discard := d.DiscardOne(newDeadwood)
+	newDeadwood.RemoveCard(discard)
+
+	if len(newMelds) > len(beforeMelds) {
+		return discard
 	}
-	for i := 1; i < cards.Size(); i++ {
-		if cards.Get(i).Suit() != cards.Get(0).Suit() {
-			return false
-		}
-		if cards.Get(i).Rank() != cards.Get(i-1).Rank()+1 {
-			return false
-		}
+	newScore := CardsPoint(newDeadwood)
+	if newScore < beforeScore {
+		return discard
 	}
-	return true
+	return c
 }
-
-// Meld: Set or Run
-func IsMeld(cards *poker.Cards) bool {
-	return IsTheSet(cards) || IsTheRun(cards)
-}
-
-// Point: A=1 point，J/Q/K=10 point, and others according to their numerical values.
-func CardPoint(card poker.Card) int {
-	v := card.RankInt()
-	if v >= 10 {
-		return 10
-	}
-	return v
-}
-
-func CardsPoint(cards *poker.Cards) int {
-	ret := 0
-	for i := 0; i < cards.Size(); i++ {
-		ret += CardPoint(cards.Get(i))
-	}
-	return ret
-}
-
-func PickBestRun(cards *poker.Cards) []*poker.Cards {
-	const minDistance = 3
-	const maxDistance = 10
-
-	ret := []*poker.Cards{}
-	if cards.Size() < minDistance {
-		return ret
-	}
-
-	cards.SortByRank()
-
-	for pos := 0; pos <= cards.Size()-minDistance; {
-		rank := cards.Get(pos).RankInt()
-		suit := cards.Get(pos).Suit()
-
-		searchEndPos := pos + maxDistance
-		if searchEndPos > cards.Size() {
-			searchEndPos = cards.Size()
-		}
-
-		currDistance := 1
-		for i := pos + 1; i < searchEndPos; i++ {
-			if suit != cards.Get(i).Suit() {
-				break
-			}
-			if rank+i-pos != cards.Get(i).RankInt() {
-				break
-			}
-			currDistance++
-		}
-
-		if currDistance >= minDistance && currDistance <= maxDistance {
-			ret = append(ret, poker.NewCards(cards.Inner[pos:pos+currDistance]))
-		}
-		pos += currDistance
-	}
-	return ret
-}
-
-func PickBestSet(cards *poker.Cards) []*poker.Cards {
-	const minDistance = 3
-	const maxDistance = 4
-
-	ret := []*poker.Cards{}
-	if cards.Size() < minDistance {
-		return ret
-	}
-
-	cards.SortBySuit()
-
-	for pos := 0; pos <= cards.Size()-minDistance; {
-		rank := cards.Get(pos).Rank()
-
-		searchEndPos := pos + maxDistance
-		if searchEndPos > cards.Size() {
-			searchEndPos = cards.Size()
-		}
-
-		currDistance := 1
-		for i := pos + 1; i < searchEndPos; i++ {
-			if cards.Get(i).Rank() != rank {
-				break
-			}
-			currDistance++
-		}
-
-		if currDistance >= minDistance && currDistance <= maxDistance {
-			ret = append(ret, poker.NewCards(cards.Inner[pos:pos+currDistance]))
-		}
-		pos += currDistance
-	}
-	return ret
-}
-
-func DetectAllRun(cards *poker.Cards) []*poker.Cards {
-	const minDistance = 3
-	const maxDistance = 10
-
-	ret := []*poker.Cards{}
-	if cards.Size() < minDistance {
-		return ret
-	}
-
-	cards.SortBySuit()
-	for pos := 0; pos <= cards.Size()-minDistance; {
-		rank := cards.Get(pos).RankInt()
-		suit := cards.Get(pos).Suit()
-
-		searchEndPos := pos + maxDistance
-		if searchEndPos > cards.Size() {
-			searchEndPos = cards.Size()
-		}
-
-		currDistance := 1
-		for i := pos + 1; i < searchEndPos; i++ {
-			if suit != cards.Get(i).Suit() {
-				break
-			}
-			if rank+i-pos != cards.Get(i).RankInt() {
-				break
-			}
-			currDistance++
-			if currDistance >= minDistance && currDistance <= maxDistance {
-				ret = append(ret, poker.NewCards(cards.Inner[pos:pos+currDistance]).Copy())
-			}
-		}
-		pos += 1
-	}
-	return ret
-}
-
-func DetectAllSet(cards *poker.Cards) []*poker.Cards {
-
-	const minDistance = 3
-	const maxDistance = 4
-
-	ret := []*poker.Cards{}
-	if cards.Size() < minDistance {
-		return ret
-	}
-
-	cards.SortByRank()
-
-	for pos := 0; pos <= cards.Size()-minDistance; {
-		rank := cards.Get(pos).Rank()
-
-		searchEndPos := pos + maxDistance
-		if searchEndPos > cards.Size() {
-			searchEndPos = cards.Size()
-		}
-
-		currDistance := 1
-		for i := pos + 1; i < searchEndPos; i++ {
-			if cards.Get(i).Rank() != rank {
-				break
-			}
-			currDistance++
-		}
-
-		if currDistance >= minDistance && currDistance <= maxDistance {
-			ret = append(ret, poker.NewCards(cards.Inner[pos:pos+currDistance]).Copy())
-		}
-
-		pos += currDistance
-	}
-	return ret
-}
-
-// return melds and deadwood
-func DetectBest(cards *poker.Cards) ([]*poker.Cards, *poker.Cards) {
-	if cards.Size() < 3 {
-		return nil, cards
-	}
-
-	runs := DetectAllRun(cards)
-	sets := DetectAllSet(cards)
-	alls := append(runs, sets...)
-	if len(alls) == 0 {
-		return nil, cards
-	}
-
-	temp, retDeadwood := DetectBest(cards.Copy().Sub(alls[0]))
-	retMelds := append([]*poker.Cards{alls[0]}, temp...)
-	bestDeadpoint := CardsPoint(retDeadwood)
-
-	for i := 1; i < len(alls); i++ {
-		meld := alls[i]
-
-		newTemp, newDeadwood := DetectBest(cards.Copy().Sub(meld))
-		newDeadpoint := CardsPoint(newDeadwood)
-
-		if newDeadpoint < bestDeadpoint {
-			retMelds = append([]*poker.Cards{meld}, newTemp...)
-			retDeadwood = newDeadwood
-			bestDeadpoint = newDeadpoint
-		}
-	}
-	return retMelds, retDeadwood
-}
-
-// func PickDeadwood(cards *poker.Cards) poker.Card {
-// 	if cards.Size() < 1 {
-// 		return poker.EmptyCard
-// 	}
-// 	melds, deadwood := DetectBest(cards)
-// 	return deadwood
-// }

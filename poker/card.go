@@ -15,14 +15,15 @@ import (
 // J-A   : Jack,Queen,King,Ace
 // joker : 大小王
 
-//CardSuit: suit of card
-type CardSuit byte
+// CardSuit: suit of card
+type CardSuit uint8
 
-//CardRank: Rank value of card
-type CardRank byte
+// CardRank: Rank value of card
+type CardRank uint8
 
-//Card a card of poker,memony value 4bits == |--2 bits suit -- 2 bits rank--|
-type Card byte
+// Card a card of poker, memony value 8bits.
+// |--4 bits suit -- 4 bits rank--|
+type Card uint8
 
 const (
 	EmptyCard Card = 0x00
@@ -40,7 +41,7 @@ const (
 	JOKER   CardSuit = 5
 )
 
-func (cs CardSuit) Chinses() string {
+func (cs CardSuit) Chinese() string {
 	switch cs {
 	case DIAMOND:
 		return "方块"
@@ -57,11 +58,12 @@ func (cs CardSuit) Chinses() string {
 	}
 }
 
+// ♣♦♥♠
 var Suits = []byte("?DCHSJ")
-var Ranks = []byte("?A23456789TJQK")
+var Ranks = []byte("?A23456789XJQK")
 
-//CreateCard by suit and rank
-func CreateCard(suit CardSuit, rank CardRank) Card {
+// NewCard by suit and rank
+func NewCard(suit CardSuit, rank CardRank) Card {
 	if !(suit.Valid() && rank.Valid()) {
 		return EmptyCard
 	}
@@ -70,7 +72,7 @@ func CreateCard(suit CardSuit, rank CardRank) Card {
 	return Card(raw)
 }
 
-func CreateCardByString(str string) Card {
+func NewCardByString(str string) Card {
 	str = strings.TrimSpace(str)
 	if len(str) != 2 {
 		return EmptyCard
@@ -89,10 +91,10 @@ func CreateCardByString(str string) Card {
 			break
 		}
 	}
-	return CreateCard(suit, rank)
+	return NewCard(suit, rank)
 }
 
-//ByteToCard byte to card
+// ByteToCard byte to card
 func ByteToCard(b byte) Card {
 	r := Card(b)
 	if !r.Valid() {
@@ -109,7 +111,7 @@ func (s CardSuit) Valid() bool {
 	return 0 < s && s < 6
 }
 
-//Suit return card's suit
+// Suit return card's suit
 func (c Card) Suit() CardSuit {
 	return CardSuit(byte(c) >> 4)
 }
@@ -118,7 +120,7 @@ func (c Card) SuitInt() int {
 	return int(c.Suit())
 }
 
-//Rank return card's rank
+// Rank return card's rank
 func (c Card) Rank() CardRank {
 	return CardRank(byte(c) & CARD_RANK_MASK)
 }
@@ -128,6 +130,9 @@ func (c Card) RankInt() int {
 }
 
 func (c Card) Valid() bool {
+	if c.Suit() == JOKER {
+		return c.Rank() == 1 || c.Rank() == 2
+	}
 	return c.Suit().Valid() && c.Rank().Valid()
 }
 
@@ -140,19 +145,19 @@ func (c Card) Byte() byte {
 }
 
 func (c Card) SetSuit(suit CardSuit) Card {
-	return CreateCard(suit, c.Rank())
+	return NewCard(suit, c.Rank())
 }
 
 func (c Card) SetRank(rank CardRank) Card {
-	return CreateCard(c.Suit(), rank)
+	return NewCard(c.Suit(), rank)
 }
 
-func (c Card) Chinses() string {
+func (c Card) Chinese() string {
 	if !c.Valid() {
 		return "空牌"
 	}
 	s := c.Suit()
-	suitStr := s.Chinses()
+	suitStr := s.Chinese()
 	rankStr := string(Ranks[c.Rank()])
 	if rankStr == "T" {
 		rankStr = "10"

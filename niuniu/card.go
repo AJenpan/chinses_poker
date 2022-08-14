@@ -40,7 +40,7 @@ type NNDeck struct {
 
 func NewNNDeck() *NNDeck {
 	return &NNDeck{
-		Cards: poker.CreateDeckWithoutJoker(),
+		Cards: poker.NewDeckWithoutJoker(),
 	}
 }
 
@@ -67,7 +67,7 @@ func (c *NNHandCards) Power() poker.Card {
 	return c.power
 }
 
-//Compare return c >= other?
+// Compare return c >= other?
 func (c *NNHandCards) Compare(other *NNHandCards) bool {
 	if c.typ == ERROR_TYPE || other.typ == ERROR_TYPE {
 		panic("error type")
@@ -92,7 +92,7 @@ func (c *NNHandCards) isFourBomb() bool {
 	for r, v := range count {
 		if v == 4 {
 			c.typ = BULL_FOURBOMB
-			c.power = poker.CreateCard(poker.SPADE, poker.CardRank(r))
+			c.power = poker.NewCard(poker.SPADE, poker.CardRank(r))
 			return true
 		}
 	}
@@ -154,7 +154,7 @@ func (c *NNHandCards) Calculate() {
 		typ := NO_POINT
 
 		if calculatePoint(v)%10 == 0 {
-			temp := c.Cards.Copy()
+			temp := c.Cards.Clone()
 			for _, c := range v.Inner {
 				temp.RemoveCard(c)
 			}
@@ -170,7 +170,7 @@ func (c *NNHandCards) Calculate() {
 		}
 	}
 	if bestType == NO_POINT {
-		bestPower := poker.CreateCard(poker.DIAMOND, 1)
+		bestPower := poker.NewCard(poker.DIAMOND, 1)
 		for _, v := range c.Cards.Inner {
 			if compareCard(v, bestPower) {
 				bestPower = v
@@ -193,9 +193,9 @@ func calculatePoint(cards *poker.Cards) int {
 	return v
 }
 
-//rank compare : k>q>j>10>9>8>7>6>5>4>3>2>a
-//suit compare : 黑桃>红桃>梅花>方块
-//compareCard return a > b ?
+// rank compare : k>q>j>10>9>8>7>6>5>4>3>2>a
+// suit compare : 黑桃>红桃>梅花>方块
+// compareCard return a > b ?
 func compareCard(a, b poker.Card) bool {
 	if a.RankInt() > b.RankInt() {
 		return true
@@ -205,7 +205,7 @@ func compareCard(a, b poker.Card) bool {
 	return false
 }
 
-//TODO: re-write with go-style
+// TODO: re-write with go-style
 func combine(raw *poker.Cards, subset *poker.Cards, out *[]*poker.Cards, m int) {
 	if raw.Size() < 1 {
 		return
@@ -215,9 +215,9 @@ func combine(raw *poker.Cards, subset *poker.Cards, out *[]*poker.Cards, m int) 
 		return
 	}
 
-	cards := raw.Copy()
+	cards := raw.Clone()
 	for i := 0; i < raw.Size(); i++ {
-		temp := subset.Copy()
+		temp := subset.Clone()
 		temp.BrickCard(cards.Inner[0])
 		cards.Remove(0)
 		if m != temp.Size() {

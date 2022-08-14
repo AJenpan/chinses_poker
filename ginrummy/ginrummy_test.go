@@ -1,6 +1,7 @@
 package ginrummy
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ func TestPickTheSet(t *testing.T) {
 	randRank := rand.Int31n(12) + 2
 	cards := poker.NewEmptyCards()
 	for i := 1; i < 5; i++ {
-		cards.Push(poker.CreateCard(poker.CardSuit(i), poker.CardRank(randRank)))
+		cards.Push(poker.NewCard(poker.CardSuit(i), poker.CardRank(randRank)))
 	}
 
 	res := PickBestSet(cards)
@@ -29,9 +30,9 @@ func TestPickTheSet(t *testing.T) {
 	}
 
 	cards.Clear()
-	cards.Push(poker.CreateCard(poker.DIAMOND, poker.CardRank(1)))
+	cards.Push(poker.NewCard(poker.DIAMOND, poker.CardRank(1)))
 	for i := 1; i <= 3; i++ {
-		cards.Push(poker.CreateCard(poker.CardSuit(i), poker.CardRank(randRank)))
+		cards.Push(poker.NewCard(poker.CardSuit(i), poker.CardRank(randRank)))
 	}
 	if len(PickBestSet(cards)) != 1 {
 		t.Errorf("PickTheSet should return 1 set but returned %d", len(res))
@@ -45,14 +46,14 @@ func TestPickTheSet(t *testing.T) {
 		return
 	}
 
-	cards.Push(poker.CreateCard(poker.DIAMOND, poker.CardRank(1)))
-	cards.Push(poker.CreateCard(poker.CLUB, poker.CardRank(1)))
+	cards.Push(poker.NewCard(poker.DIAMOND, poker.CardRank(1)))
+	cards.Push(poker.NewCard(poker.CLUB, poker.CardRank(1)))
 
 	if len(PickBestSet(cards)) != 0 {
 		t.FailNow()
 		return
 	}
-	cards.Push(poker.CreateCard(poker.SPADE, poker.CardRank(1)))
+	cards.Push(poker.NewCard(poker.SPADE, poker.CardRank(1)))
 	if len(PickBestSet(cards)) != 1 {
 		t.FailNow()
 		return
@@ -60,8 +61,7 @@ func TestPickTheSet(t *testing.T) {
 }
 
 func TestPickTheRun(t *testing.T) {
-
-	cards := poker.CreateDeckWithoutJoker()
+	cards := poker.NewDeckWithoutJoker()
 	cards.SortBySuit()
 
 	rand.Seed(time.Now().UnixNano())
@@ -89,6 +89,21 @@ func TestPickTheRun(t *testing.T) {
 
 	if expectHas != (len(res) == 1) {
 		t.Errorf("PickTheRun should return %v, but returned %v", expectHas, (len(res) == 1))
+		t.FailNow()
+		return
+	}
+}
+func TestDetectAllSet(t *testing.T) {
+	cards, err := poker.StringToCards("AD AS AC AH")
+	if err != nil {
+		t.FailNow()
+		return
+	}
+	t.Log(cards.String())
+	cs := cards.Chinese()
+	t.Log(cs)
+	res := DetectAllSet(cards)
+	if len(res) != 4+1 {
 		t.FailNow()
 		return
 	}
@@ -122,7 +137,7 @@ func BenchmarkDetectBestAg(b *testing.B) {
 
 func BenchmarkDetectBestRand(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		cards := poker.CreateDeckWithoutJoker()
+		cards := poker.NewDeckWithoutJoker()
 		cards.Shuffle()
 		cards.Inner = cards.Inner[0:10]
 		DetectBest(cards)
@@ -130,12 +145,77 @@ func BenchmarkDetectBestRand(b *testing.B) {
 }
 
 func TestDoBestAction(t *testing.T) {
-	cards := poker.CreateDeckWithoutJoker()
+	cards := poker.NewDeckWithoutJoker()
 	cards.Shuffle()
 	cards.Inner = cards.Inner[0:10]
-	deck := poker.NewCards(cards.Inner[10:]).Copy()
+	deck := poker.NewCards(cards.Inner[10:]).Clone()
 
 	for _, v := range deck.Inner {
 		deck.RemoveCard(v)
 	}
+}
+
+func TestDiscardOne(t *testing.T) {
+	allcards := poker.NewDeckWithoutJoker()
+	// cards, err := poker.StringToCards("AD 2S 3C QC QD")
+	cards, err := poker.StringToCards("AD 2S KD KS")
+	if err != nil {
+		return
+	}
+	existRate := DeckRate{}
+	restCount := allcards.Size() - cards.Size()
+	for _, c := range allcards.Inner {
+		if cards.Contain(c) {
+			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0)
+		} else {
+			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0) / float32(restCount)
+		}
+	}
+
+	d := NewHandCards(cards)
+	d.ExistRate = existRate
+
+	for _, c := range cards.Inner {
+		fmt.Println("run:", c.Chinese(), ":", d.TheRunRate(c))
+		fmt.Println("set:", c.Chinese(), ":", d.TheSetRate(c))
+		fmt.Println("rate:", c.Chinese(), ":", d.HoldpowerRate(c))
+		fmt.Println("DiscardScore:", c.Chinese(), ":", d.DiscardScore(c))
+		fmt.Println()
+	}
+
+	discard := d.DiscardOne(d.Cards)
+	if discard.RankInt() == 12 {
+		t.FailNow()
+		return
+	}
+}
+
+func TestCheckNeed(t *testing.T) {
+	allcards := poker.NewDeckWithoutJoker()
+	cards, err := poker.StringToCards("AD 2S KD KS")
+	if err != nil {
+		return
+	}
+	existRate := DeckRate{}
+	restCount := allcards.Size() - cards.Size()
+	for _, c := range allcards.Inner {
+		if cards.Contain(c) {
+			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0)
+		} else {
+			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0) / float32(restCount)
+		}
+	}
+
+	d := NewHandCards(cards)
+	d.ExistRate = existRate
+
+	pick := poker.NewCardByString("KH")
+	discard := d.CheckNeed(pick)
+
+	if discard == pick {
+		t.FailNow()
+		return
+	}
+	t.Log("discard:", discard.Chinese())
+	fmt.Println(discard.Chinese())
 }

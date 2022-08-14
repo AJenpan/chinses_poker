@@ -6,23 +6,23 @@ import (
 	"strings"
 )
 
-//CreateDeck create a pack of cards
-func CreateDeck() *Cards {
+// NewDeck create a pack of cards
+func NewDeck() *Cards {
 	deck := NewEmptyCards()
 	for i := CardRank(1); i <= 13; i++ {
-		deck.BrickCard(CreateCard(DIAMOND, i))
-		deck.BrickCard(CreateCard(CLUB, i))
-		deck.BrickCard(CreateCard(HEART, i))
-		deck.BrickCard(CreateCard(SPADE, i))
+		deck.BrickCard(NewCard(DIAMOND, i))
+		deck.BrickCard(NewCard(CLUB, i))
+		deck.BrickCard(NewCard(HEART, i))
+		deck.BrickCard(NewCard(SPADE, i))
 	}
-	deck.BrickCard(CreateCard(JOKER, 1)) //小王
-	deck.BrickCard(CreateCard(JOKER, 2)) //大王
+	deck.BrickCard(NewCard(JOKER, 1)) //小王
+	deck.BrickCard(NewCard(JOKER, 2)) //大王
 	return deck
 }
 
-//CreateDeckWithoutJoker without 2 jokers
-func CreateDeckWithoutJoker() *Cards {
-	deck := CreateDeck()
+// NewDeckWithoutJoker without 2 jokers
+func NewDeckWithoutJoker() *Cards {
+	deck := NewDeck()
 	deck.Inner = deck.Inner[:deck.Size()-2]
 	return deck
 }
@@ -32,7 +32,7 @@ func StringToCards(str string) (*Cards, error) {
 	cs := strings.Split(str, " ")
 	cards := make([]Card, 0, len(cs))
 	for _, v := range cs {
-		card := CreateCardByString(v)
+		card := NewCardByString(v)
 		if !card.Valid() {
 			return nil, fmt.Errorf("invalid card: %v", v)
 		}

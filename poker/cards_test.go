@@ -6,8 +6,8 @@ import (
 )
 
 func TestCardsSub(t *testing.T) {
-	deck1 := CreateDeck()
-	deck2 := CreateDeck()
+	deck1 := NewDeck()
+	deck2 := NewDeck()
 	deck1.Sub(deck2)
 	if deck1.Size() != 0 {
 		t.FailNow()
@@ -16,14 +16,14 @@ func TestCardsSub(t *testing.T) {
 
 func BenchmarkCardsSubB(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		deck1 := CreateDeck()
-		deck2 := CreateDeck()
+		deck1 := NewDeck()
+		deck2 := NewDeck()
 		deck1.Sub(deck2)
 	}
 }
 
 func TestSort(t *testing.T) {
-	deck := CreateDeckWithoutJoker()
+	deck := NewDeckWithoutJoker()
 	deck.SortByRank()
 	cs := deck.String()
 	fmt.Println(cs)
