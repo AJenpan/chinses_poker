@@ -7,7 +7,6 @@ import (
 )
 
 func TestNiuniu(t *testing.T) {
-
 	type handcards struct {
 		cards string
 		typ   NNType

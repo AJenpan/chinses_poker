@@ -6,11 +6,11 @@ import (
 
 const maxHandCardCout = 5
 
-type NNType byte
+type NNType uint8
 
 const (
-	NO_POINT        NNType = 0  //没牛
-	BULL_ONE        NNType = 1  //牛一
+	BULL_ZERO       NNType = 0  //没牛
+	BULL_ONE        NNType = 1  //牛一 //牛丁
 	BULL_TWO        NNType = 2  //牛二
 	BULL_THREE      NNType = 3  //牛三
 	BULL_FOUR       NNType = 4  //牛四
@@ -20,13 +20,12 @@ const (
 	BULL_EIGHT      NNType = 8  //牛八
 	BULL_NINE       NNType = 9  //牛九
 	BULL_BULL       NNType = 10 //牛牛
-	BULL_FIVESMALL  NNType = 11 //五小牛
-	BULL_FIVEFLOWER NNType = 12 //五花牛
-	BULL_FOURBOMB   NNType = 13 //炸弹牛
+	BULL_FOURBOMB   NNType = 11 //炸弹牛 //四炸 //5张牌中有4张一样的牌，此时无需有牛
+	BULL_FIVEFLOWER NNType = 12 //五花牛 //指的是JQK，五花牛指的是手上的5张牌全为JQK的特殊牛牛牌型
+	BULL_FIVESMALL  NNType = 13 //五小牛 //五张牌都小余5，且牌点总数小余或等于10
 	ERROR_TYPE      NNType = 255
 )
 
-// type NNCards poker.Cards
 type NNHandCards struct {
 	*poker.Cards
 	typ       NNType
@@ -75,7 +74,7 @@ func (c *NNHandCards) Compare(other *NNHandCards) bool {
 	if c.typ > other.typ {
 		return true
 	} else if c.typ == other.typ {
-		return compareCard(c.power, other.power)
+		return CompareCard(c.power, other.power)
 	}
 	return false
 }
@@ -148,10 +147,10 @@ func (c *NNHandCards) Calculate() {
 	ret := &[]*poker.Cards{}
 	combine(c.Cards, poker.NewEmptyCards(), ret, 3)
 
-	bestType := NO_POINT
+	bestType := BULL_ZERO
 
 	for _, v := range *(ret) {
-		typ := NO_POINT
+		typ := BULL_ZERO
 
 		if calculatePoint(v)%10 == 0 {
 			temp := c.Cards.Clone()
@@ -169,10 +168,10 @@ func (c *NNHandCards) Calculate() {
 			bestType = typ
 		}
 	}
-	if bestType == NO_POINT {
+	if bestType == BULL_ZERO {
 		bestPower := poker.NewCard(poker.DIAMOND, 1)
 		for _, v := range c.Cards.Inner {
-			if compareCard(v, bestPower) {
+			if CompareCard(v, bestPower) {
 				bestPower = v
 			}
 		}
@@ -181,22 +180,29 @@ func (c *NNHandCards) Calculate() {
 	c.typ = bestType
 }
 
-func calculatePoint(cards *poker.Cards) int {
+func CardPoint(card poker.Card) int {
+	rank := card.RankInt()
+	if rank > 10 {
+		return 10
+	}
+	return rank
+}
+func CardsPoint(cards *poker.Cards) int {
 	v := 0
 	for _, c := range cards.Inner {
-		if c.RankInt() > 10 {
-			v += 10
-		} else {
-			v += c.RankInt()
-		}
+		v += CardPoint(c)
 	}
 	return v
 }
 
+func calculatePoint(cards *poker.Cards) int {
+	return CardsPoint(cards)
+}
+
 // rank compare : k>q>j>10>9>8>7>6>5>4>3>2>a
 // suit compare : 黑桃>红桃>梅花>方块
-// compareCard return a > b ?
-func compareCard(a, b poker.Card) bool {
+// CompareCard return a > b ?
+func CompareCard(a, b poker.Card) bool {
 	if a.RankInt() > b.RankInt() {
 		return true
 	} else if a.RankInt() == b.RankInt() {

@@ -1,7 +1,6 @@
 package ginrummy
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -110,16 +109,19 @@ func TestDetectAllSet(t *testing.T) {
 }
 
 func TestDetectBest(t *testing.T) {
-	cards, err := poker.StringToCards("AD AS AC 2C 3C 4C")
+	cards, err := poker.StringToCards("AS 2S 3S 4C 4S 4D 5S 6S 7S 9S")
 	if err != nil {
 		t.FailNow()
 		return
 	}
-	t.Log(cards.String())
-	cs := cards.Chinese()
-	t.Log(cs)
 	melds, deadwood := DetectBest(cards)
-	if len(melds) != 2 || deadwood.Size() != 0 {
+	for _, v := range melds {
+		t.Log(v.Chinese())
+	}
+	if deadwood != nil {
+		t.Log(deadwood.Chinese())
+	}
+	if len(melds) != 3 || deadwood.Size() != 1 {
 		t.FailNow()
 		return
 	}
@@ -162,60 +164,16 @@ func TestDiscardOne(t *testing.T) {
 	if err != nil {
 		return
 	}
-	existRate := DeckRate{}
+	existRate := &CardRate{}
 	restCount := allcards.Size() - cards.Size()
 	for _, c := range allcards.Inner {
 		if cards.Contain(c) {
-			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0)
+
+			existRate.SetCardRate(c, 1.0)
 		} else {
-			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0) / float32(restCount)
+			existRate.SetCardRate(c, float32(1.0)/float32(restCount))
+
 		}
 	}
 
-	d := NewHandCards(cards)
-	d.ExistRate = existRate
-
-	for _, c := range cards.Inner {
-		fmt.Println("run:", c.Chinese(), ":", d.TheRunRate(c))
-		fmt.Println("set:", c.Chinese(), ":", d.TheSetRate(c))
-		fmt.Println("rate:", c.Chinese(), ":", d.HoldpowerRate(c))
-		fmt.Println("DiscardScore:", c.Chinese(), ":", d.DiscardScore(c))
-		fmt.Println()
-	}
-
-	discard := d.DiscardOne(d.Cards)
-	if discard.RankInt() == 12 {
-		t.FailNow()
-		return
-	}
-}
-
-func TestCheckNeed(t *testing.T) {
-	allcards := poker.NewDeckWithoutJoker()
-	cards, err := poker.StringToCards("AD 2S KD KS")
-	if err != nil {
-		return
-	}
-	existRate := DeckRate{}
-	restCount := allcards.Size() - cards.Size()
-	for _, c := range allcards.Inner {
-		if cards.Contain(c) {
-			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0)
-		} else {
-			existRate[c.RankInt()-1][c.SuitInt()-1] = float32(1.0) / float32(restCount)
-		}
-	}
-
-	d := NewHandCards(cards)
-	d.ExistRate = existRate
-
-	pick := poker.NewCardByString("KH")
-	discard := d.CheckNeed(pick)
-
-	if discard == pick {
-		t.FailNow()
-		return
-	}
-	t.Log("discard:", discard.Chinese())
-	fmt.Println(discard.Chinese())
 }
