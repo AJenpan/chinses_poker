@@ -12,19 +12,25 @@ func TestNiuniu(t *testing.T) {
 		typ   NNType
 	}
 	list := []handcards{
-		{cards: "8D 2D TD 2C 9H", typ: BULL_ONE},
-		{cards: "TD 2C 9H 8D 2D", typ: BULL_ONE},
-		{cards: "TD 2C 9H 8D 3D", typ: BULL_TWO},
-		{cards: "9D AC AH 8D 3D", typ: BULL_TWO},
-		{cards: "TD JC QH KD QD", typ: BULL_BULL},
-		{cards: "JD QC KH KD QD", typ: BULL_FIVEFLOWER},
-		{cards: "AD AC AH 3D 2D", typ: BULL_FIVESMALL},
-		{"AD AC AH AS 2D", BULL_FOURBOMB},
+		{cards: "D8 D2 D0 C2 H9", typ: BULL_ONE},
+		{cards: "D0 C2 H9 D8 D2", typ: BULL_ONE},
+		{cards: "D0 C2 H9 D8 D3", typ: BULL_TWO},
+		{cards: "D9 CA HA D8 D3", typ: BULL_TWO},
+		{cards: "D0 CJ HQ DK DQ", typ: BULL_BULL},
+		{cards: "DJ CQ HK DK DQ", typ: BULL_FIVEFLOWER},
+		{cards: "DA CA HA D3 D2", typ: BULL_FIVESMALL},
+		{cards: "DA CA HA SA D2", typ: BULL_FIVESMALL},
+		{cards: "DA CA HA SA D9", typ: BULL_FOURBOMB},
 	}
 
 	for _, c := range list {
 		cards := NNHandCards{}
-		cards.Cards, _ = poker.StringToCards(c.cards)
+		var err error
+		cards.Cards, err = poker.StringToCards(c.cards)
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
 		cards.Calculate()
 		if cards.typ != c.typ {
 			t.Logf("card %s type:%v", cards.String(), cards.typ)

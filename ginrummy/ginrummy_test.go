@@ -93,7 +93,7 @@ func TestPickTheRun(t *testing.T) {
 	}
 }
 func TestDetectAllSet(t *testing.T) {
-	cards, err := poker.StringToCards("AD AS AC AH")
+	cards, err := poker.StringToCards("DA SA CA HA")
 	if err != nil {
 		t.FailNow()
 		return
@@ -109,7 +109,7 @@ func TestDetectAllSet(t *testing.T) {
 }
 
 func TestDetectBest(t *testing.T) {
-	cards, err := poker.StringToCards("AS 2S 3S 4C 4S 4D 5S 6S 7S 9S")
+	cards, err := poker.StringToCards("SA S2 S3 C4 S4 D4 S5 S6 S7 S9")
 	if err != nil {
 		t.FailNow()
 		return
@@ -128,7 +128,7 @@ func TestDetectBest(t *testing.T) {
 }
 
 func BenchmarkDetectBestAg(b *testing.B) {
-	cards, err := poker.StringToCards("AD AS AC 2C 3C 4C")
+	cards, err := poker.StringToCards("DA SA CA C2 C3 C4")
 	if err != nil {
 		return
 	}
@@ -159,8 +159,7 @@ func TestDoBestAction(t *testing.T) {
 
 func TestDiscardOne(t *testing.T) {
 	allcards := poker.NewDeckWithoutJoker()
-	// cards, err := poker.StringToCards("AD 2S 3C QC QD")
-	cards, err := poker.StringToCards("AD 2S KD KS")
+	cards, err := poker.StringToCards("DA S2 DK SK")
 	if err != nil {
 		return
 	}

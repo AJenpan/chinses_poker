@@ -60,7 +60,7 @@ func (cs CardSuit) Chinese() string {
 
 // ♣♦♥♠
 var Suits = []byte("?DCHSJ")
-var Ranks = []byte("?A23456789XJQK")
+var Ranks = []byte("?A234567890JQK")
 
 // NewCard by suit and rank
 func NewCard(suit CardSuit, rank CardRank) Card {
@@ -77,17 +77,17 @@ func NewCardByString(str string) Card {
 	if len(str) != 2 {
 		return EmptyCard
 	}
-	rank := CardRank(0)
-	for i, r := range Ranks {
-		if r == str[0] {
-			rank = CardRank(i)
+	suit := CardSuit(0)
+	for i, s := range Suits {
+		if s == str[0] {
+			suit = CardSuit(i)
 			break
 		}
 	}
-	suit := CardSuit(0)
-	for i, s := range Suits {
-		if s == str[1] {
-			suit = CardSuit(i)
+	rank := CardRank(0)
+	for i, r := range Ranks {
+		if r == str[1] {
+			rank = CardRank(i)
 			break
 		}
 	}
@@ -157,11 +157,6 @@ func (c Card) Chinese() string {
 		return "空牌"
 	}
 	s := c.Suit()
-	suitStr := s.Chinese()
-	rankStr := string(Ranks[c.Rank()])
-	if rankStr == "T" {
-		rankStr = "10"
-	}
 	if s == JOKER {
 		switch c.Rank() {
 		case 1:
@@ -172,5 +167,8 @@ func (c Card) Chinese() string {
 			return "空牌"
 		}
 	}
+
+	suitStr := s.Chinese()
+	rankStr := string(Ranks[c.Rank()])
 	return suitStr + string(rankStr)
 }

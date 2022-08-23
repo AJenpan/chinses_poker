@@ -134,13 +134,13 @@ func (c *NNHandCards) Calculate() {
 		return
 	}
 	c.calculate = true
+	if c.isFiveSmall() {
+		return
+	}
 	if c.isFourBomb() {
 		return
 	}
 	if c.isFiveFlower() {
-		return
-	}
-	if c.isFiveSmall() {
 		return
 	}
 
@@ -189,6 +189,9 @@ func CardPoint(card poker.Card) int {
 }
 func CardsPoint(cards *poker.Cards) int {
 	v := 0
+	if cards == nil || cards.Size() == 0 {
+		return v
+	}
 	for _, c := range cards.Inner {
 		v += CardPoint(c)
 	}

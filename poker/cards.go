@@ -18,8 +18,6 @@ func NewEmptyCards() *Cards {
 }
 
 func NewCards(cards []Card) *Cards {
-	// new := make([]Card, len(cards))
-	// copy(new, cards)
 	return &Cards{Inner: cards}
 }
 
@@ -74,17 +72,17 @@ func (d *Cards) BrickDeck(n *Cards) {
 	d.Inner = append(d.Inner, n.Inner...)
 }
 
-// order is AD AC AH AS 2D
+// order is DA CA HA SA D2
 func (d *Cards) SortByRank() {
 	sort.Sort(ByRank(d.Inner))
 }
 
-// order is AD 2D 3D 4D 5D
+// order is DA D2 D3 D4 D5
 func (d *Cards) SortBySuit() {
 	sort.Sort(BySuit(d.Inner))
 }
 
-// order is AD 2D 3D 4D 5D
+// order is DA D2 D3 D4 D5
 func (d *Cards) SortByByte() {
 	sort.Slice(d.Inner, func(i, j int) bool {
 		return byte(d.Inner[i]) < byte(d.Inner[j])
