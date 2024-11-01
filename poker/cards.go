@@ -221,10 +221,22 @@ func (d *Cards) ToMap() map[Card]int {
 
 // 交集
 func (d *Cards) Intersect(other *Cards) []Card {
+	// TODO:
 	return nil
 }
 
 // 求相对补集  this - other, 即是返回在other中没有的元素, 如 i{1,2,3}, other{2,3}, return{1}
 func (d *Cards) Complementary(other *Cards) []Card {
+	// TODO:
 	return nil
+}
+
+func (d *Cards) SuitRankCount() (int, int) {
+	rankCnt := make(map[CardRank]int)
+	suitCnt := make(map[CardSuit]int)
+	for _, card := range d.Inner {
+		rankCnt[card.Rank()]++
+		suitCnt[card.Suit()]++
+	}
+	return len(suitCnt), len(rankCnt)
 }

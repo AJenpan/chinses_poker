@@ -26,6 +26,67 @@ type CardRank uint8
 type Card uint8
 
 const (
+	DIAMOND_A Card = 0x11 + iota
+	DIAMOND_2
+	DIAMOND_3
+	DIAMOND_4
+	DIAMOND_5
+	DIAMOND_6
+	DIAMOND_7
+	DIAMOND_8
+	DIAMOND_9
+	DIAMOND_10
+	DIAMOND_J
+	DIAMOND_Q
+	DIAMOND_K
+
+	CLUB_A Card = 0x21 + iota
+	CLUB_2
+	CLUB_3
+	CLUB_4
+	CLUB_5
+	CLUB_6
+	CLUB_7
+	CLUB_8
+	CLUB_9
+	CLUB_10
+	CLUB_J
+	CLUB_Q
+	CLUB_K
+
+	HEART_A Card = 0x31 + iota
+	HEART_2
+	HEART_3
+	HEART_4
+	HEART_5
+	HEART_6
+	HEART_7
+	HEART_8
+	HEART_9
+	HEART_10
+	HEART_J
+	HEART_Q
+	HEART_K
+
+	SPADE_A Card = 0x41 + iota
+	SPADE_2
+	SPADE_3
+	SPADE_4
+	SPADE_5
+	SPADE_6
+	SPADE_7
+	SPADE_8
+	SPADE_9
+	SPADE_10
+	SPADE_J
+	SPADE_Q
+	SPADE_K
+
+	JOKER_BLACK Card = +iota
+	JOKER_RED
+)
+
+const (
 	EmptyCard Card = 0x00
 
 	//Mask
