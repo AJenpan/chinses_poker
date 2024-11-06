@@ -52,7 +52,7 @@ func (d *Cards) PopBack() Card {
 // DealCards deal n cards from deck. 发多张牌
 func (d *Cards) DealCards(n int) *Cards {
 	ret := NewEmptyCards()
-	if n >= len(d.Inner) {
+	if n > len(d.Inner) {
 		return ret
 	}
 	ret.Inner, d.Inner = d.Inner[:n], d.Inner[n:]
@@ -63,13 +63,17 @@ func (d *Cards) Push(n Card) {
 	d.Inner = append(d.Inner, n)
 }
 
-// BrickCard 加入一张牌
-func (d *Cards) BrickCard(n Card) {
-	d.Inner = append(d.Inner, n)
+func (d *Cards) Append(n *Cards) {
+	d.Inner = append(d.Inner, n.Inner...)
 }
 
 func (d *Cards) BrickDeck(n *Cards) {
 	d.Inner = append(d.Inner, n.Inner...)
+}
+
+// BrickCard 加入一张牌
+func (d *Cards) BrickCard(n Card) {
+	d.Inner = append(d.Inner, n)
 }
 
 // order is DA CA HA SA D2
