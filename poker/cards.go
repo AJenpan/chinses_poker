@@ -67,11 +67,10 @@ func (d *Cards) Append(n *Cards) {
 	d.Inner = append(d.Inner, n.Inner...)
 }
 
-func (d *Cards) BrickDeck(n *Cards) {
+func (d *Cards) BrickCards(n *Cards) {
 	d.Inner = append(d.Inner, n.Inner...)
 }
 
-// BrickCard 加入一张牌
 func (d *Cards) BrickCard(n Card) {
 	d.Inner = append(d.Inner, n)
 }
@@ -91,6 +90,13 @@ func (d *Cards) SortByByte() {
 	sort.Slice(d.Inner, func(i, j int) bool {
 		return byte(d.Inner[i]) < byte(d.Inner[j])
 	})
+}
+
+func (d *Cards) Sort(fn func(Card, Card) bool) {
+	sort.Slice(d.Inner, func(i, j int) bool {
+		return fn(d.Inner[i], d.Inner[j])
+	})
+
 }
 func (d *Cards) Range(fn func(i int, c Card)) {
 	for i, v := range d.Inner {
@@ -117,13 +123,34 @@ func (d *Cards) Get(index int) Card {
 }
 
 // Remove card from deck. 删除一张牌
-func (d *Cards) RemoveCard(c Card) {
+func (d *Cards) RemoveCard(c Card) bool {
 	for i, v := range d.Inner {
 		if v.Byte() == c.Byte() {
 			d.Remove(i)
-			return
+			return true
 		}
 	}
+	return false
+}
+
+// RemoveCards remove cards from deck
+// will change the cards order
+func (d *Cards) RemoveCards(cs *Cards) bool {
+	curr := 0
+	for _, c := range cs.Inner {
+		if !d.RemoveCard(c) {
+			break
+		}
+		curr += 1
+	}
+
+	ok := curr == cs.Size()
+	if !ok {
+		for i := 0; i < curr; i++ {
+			d.Push(cs.Inner[i])
+		}
+	}
+	return ok
 }
 
 func (d *Cards) Clone() *Cards {
@@ -143,8 +170,8 @@ func (d *Cards) Contain(c Card) bool {
 
 // Shuffle 洗牌
 func (d *Cards) Shuffle() {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(d.Size(), func(i, j int) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.Shuffle(d.Size(), func(i, j int) {
 		d.Inner[i], d.Inner[j] = d.Inner[j], d.Inner[i]
 	})
 }
@@ -223,24 +250,13 @@ func (d *Cards) ToMap() map[Card]int {
 	return ret
 }
 
+// TODO:
 // 交集
-func (d *Cards) Intersect(other *Cards) []Card {
-	// TODO:
-	return nil
-}
-
+// func (d *Cards) Intersect(other *Cards) *Cards {
+// 	return nil
+// }
+// TODO:
 // 求相对补集  this - other, 即是返回在other中没有的元素, 如 i{1,2,3}, other{2,3}, return{1}
-func (d *Cards) Complementary(other *Cards) []Card {
-	// TODO:
-	return nil
-}
-
-func (d *Cards) SuitRankCount() (int, int) {
-	rankCnt := make(map[CardRank]int)
-	suitCnt := make(map[CardSuit]int)
-	for _, card := range d.Inner {
-		rankCnt[card.Rank()]++
-		suitCnt[card.Suit()]++
-	}
-	return len(suitCnt), len(rankCnt)
-}
+// func (d *Cards) Complementary(other *Cards) *Cards {
+// 	return nil
+// }

@@ -11,7 +11,7 @@ import (
 // spade   黑桃
 
 // rank to chinses:
-// 1-10  : two,three,four,five,six,seven,eight,nine,ten.
+// 1-10  : one,two,three,four,five,six,seven,eight,nine,ten.
 // J-A   : Jack,Queen,King,Ace
 // joker : 大小王
 
