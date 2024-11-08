@@ -37,6 +37,67 @@ const (
 	DeckWindflow       DeckType = 17 // 接风
 )
 
+type DeckPower struct {
+	DeckType  DeckType
+	DeckValue int
+}
+
+// result 1: dp > other, 0: dp == other, -1: dp < other, -2: cannot compare, -3: error
+func (dp *DeckPower) Compare(other *DeckPower) int {
+	if dp.DeckType == DeckWindflow || other.DeckType == DeckWindflow {
+		return -2
+	}
+	if other.DeckType == DeckPass {
+		return 1
+	}
+	if dp.DeckType == DeckPass {
+		return -1
+	}
+
+	// same type
+	if dp.DeckType == other.DeckType {
+		if dp.DeckValue > other.DeckValue {
+			return 1
+		} else if dp.DeckValue < other.DeckValue {
+			return -1
+		}
+		return 0
+	}
+
+	dpIsBomb := false
+	if dp.DeckType >= DeckBomb4 && dp.DeckType <= DeckBomb_joker {
+		dpIsBomb = true
+	}
+	otherIsBomb := false
+	if other.DeckType >= DeckBomb4 && other.DeckType <= DeckBomb_joker {
+		otherIsBomb = true
+	}
+
+	if !dpIsBomb && !otherIsBomb {
+		// 牌型不同且非炸弹牌型无法比较
+		return -2
+	}
+
+	// dp是炸弹，other不是炸弹
+	if dpIsBomb && !otherIsBomb {
+		return 1
+	}
+
+	// dp不是炸弹，other是炸弹
+	if !dpIsBomb && otherIsBomb {
+		return -1
+	}
+
+	if dp.DeckType > other.DeckType {
+		return 1
+	}
+
+	if dp.DeckType < other.DeckType {
+		return -1
+	}
+	return -2
+}
+
 func GetDeckType(wildcard poker.CardRank, cards *poker.Cards) DeckType {
 	if cards.Size() == 0 {
 		return DeckPass
