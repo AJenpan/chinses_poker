@@ -27,9 +27,7 @@ func NewDeckWithoutJoker() *Cards {
 	return deck
 }
 
-func StringToCards(str string) (*Cards, error) {
-	str = strings.TrimSpace(str)
-	cs := strings.Split(str, " ")
+func StringArrToCards(cs []string) (*Cards, error) {
 	cards := make([]Card, 0, len(cs))
 	for _, v := range cs {
 		card := NewCardByString(v)
@@ -39,6 +37,12 @@ func StringToCards(str string) (*Cards, error) {
 		cards = append(cards, card)
 	}
 	return NewCards(cards), nil
+}
+
+func StringToCards(str string) (*Cards, error) {
+	str = strings.TrimSpace(str)
+	cs := strings.Split(str, " ")
+	return StringArrToCards(cs)
 }
 
 func BytesToCards(raw []byte) (*Cards, error) {

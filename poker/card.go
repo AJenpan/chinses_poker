@@ -26,6 +26,22 @@ type CardRank uint8
 type Card uint8
 
 const (
+	RANK_A CardRank = 0x01 + iota
+	RANK_2
+	RANK_3
+	RANK_4
+	RANK_5
+	RANK_6
+	RANK_7
+	RANK_8
+	RANK_9
+	RANK_10
+	RANK_J
+	RANK_Q
+	RANK_K
+)
+
+const (
 	DIAMOND_A Card = 0x11 + iota
 	DIAMOND_2
 	DIAMOND_3
@@ -82,7 +98,7 @@ const (
 	SPADE_Q
 	SPADE_K
 
-	JOKER_BLACK Card = +iota
+	JOKER_BLACK Card = 0x51 + iota
 	JOKER_RED
 )
 

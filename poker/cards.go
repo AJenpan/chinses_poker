@@ -59,6 +59,20 @@ func (d *Cards) DealCards(n int) *Cards {
 	return ret
 }
 
+func (d *Cards) Front() Card {
+	if d.Size() < 1 {
+		return EmptyCard
+	}
+	return d.Inner[0]
+}
+
+func (d *Cards) Back() Card {
+	if d.Size() < 1 {
+		return EmptyCard
+	}
+	return d.Inner[d.Size()-1]
+}
+
 func (d *Cards) Push(n Card) {
 	d.Inner = append(d.Inner, n)
 }
