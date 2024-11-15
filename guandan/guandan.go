@@ -4,8 +4,8 @@ import (
 	"github.com/ajenpan/poker_algorithm/poker"
 )
 
+type GDCard = poker.Card
 type GDCards = poker.Cards
-
 type GDDeck = poker.Cards
 
 func NewDeck() *GDDeck {
@@ -39,8 +39,7 @@ const (
 
 type DeckPower struct {
 	DeckType  DeckType
-	DeckValue int
-	Err       error
+	DeckValue uint8
 }
 
 // result 1: dp > other, 0: dp == other, -1: dp < other, -2: cannot compare, -3: error
@@ -99,17 +98,17 @@ func (dp *DeckPower) Compare(other *DeckPower) int {
 	return -2
 }
 
-func CardSingleCardPower(wildcard poker.CardRank, card poker.Card) int {
-	if card.Rank() == wildcard {
-		return 20
+func CardLogicValue(wildcard poker.Card, card poker.Card) uint8 {
+	if card.Suit() == poker.JOKER {
+		return uint8(card.Rank()) + 30 // 31, 32
+	}
+	if card == wildcard {
+		return uint8(poker.RANK_K) + 2 //15
 	}
 	if card.Rank() == poker.RANK_A {
-		return int(poker.RANK_K) + 1
+		return uint8(poker.RANK_K) + 1 // 14
 	}
-	if card.Suit() == poker.JOKER {
-		return 30 + int(card.Rank())
-	}
-	return int(card.Rank())
+	return uint8(card.Rank())
 }
 
 func getMinMaxRank(ranks map[poker.CardRank]int) (poker.CardRank, poker.CardRank) {
@@ -126,7 +125,7 @@ func getMinMaxRank(ranks map[poker.CardRank]int) (poker.CardRank, poker.CardRank
 }
 
 type info struct {
-	wildcard poker.CardRank
+	wildcard poker.Card
 	cards    *poker.Cards
 
 	normalCards *poker.Cards
@@ -137,141 +136,30 @@ type info struct {
 }
 
 func getDeckPowerWithNoWildcard(in *info) *DeckPower {
-	errpower := &DeckPower{DeckPass, 0, nil}
-
-	switch in.cards.Size() {
-	case 2:
-		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckPair, CardSingleCardPower(in.wildcard, in.normalCards.Front()), nil}
-		}
-	case 3:
-		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckThree, CardSingleCardPower(in.wildcard, in.normalCards.Front()), nil}
-		}
-	case 4: // 4炸, 天王炸
-		if in.suitCnt[poker.JOKER] == 4 {
-			return &DeckPower{DeckBombJoker, 0, nil}
-		}
-		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckBomb4, CardSingleCardPower(in.wildcard, in.normalCards.Front()), nil}
-		}
-	case 5: // 顺子, 同花顺, 5炸, 3带2
-		if len(in.rankCnt) == 1 { // 5炸
-			return &DeckPower{DeckBomb5, CardSingleCardPower(in.wildcard, in.normalCards.Front()), nil}
-		} else if len(in.rankCnt) == 2 { // 3带2
-			var rankA, rankB poker.CardRank = 0, 0
-			for k, v := range in.rankCnt {
-				if v == 3 {
-					rankA = k
-				} else if v == 2 {
-					rankB = k
-				}
-			}
-			if rankA != 0 && rankB != 0 {
-				return &DeckPower{DeckThreeWithTwo, CardSingleCardPower(in.wildcard, poker.NewCard(1, poker.CardRank(rankA))), nil}
-			}
-		} else if len(in.rankCnt) == 5 { // 顺子
-			in.cards.SortByRank()
-			startRank := in.cards.Inner[0].Rank()
-			endRank := in.cards.Inner[4].Rank()
-			power := 0
-			if endRank == poker.RANK_K && startRank == poker.RANK_A {
-				for i := 1; i < 4; i++ {
-					if in.cards.Inner[i].Rank()+5-poker.CardRank(i) != endRank {
-						return errpower
-					}
-				}
-				power = CardSingleCardPower(in.wildcard, poker.NewCard(1, poker.RANK_A))
-			} else {
-				for i := 1; i < 5; i++ {
-					if startRank+poker.CardRank(i) != in.cards.Inner[i].Rank() {
-						return errpower
-					}
-				}
-				power = CardSingleCardPower(in.wildcard, poker.NewCard(1, endRank))
-			}
-			if len(in.suitCnt) == 1 {
-				return &DeckPower{DeckStraightFlush, power, nil}
-			} else {
-				return &DeckPower{DeckStraight, power, nil}
-			}
-		}
-	case 6: // 连对, 钢板, 6炸
-		if len(in.rankCnt) == 1 { // 6炸
-			return &DeckPower{DeckBomb6, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
-		}
-		var minRank, MaxRank = poker.RANK_K + 1, poker.CardRank(0)
-		for k, v := range in.rankCnt {
-			if v != 3 {
-				return errpower
-			}
-			if k < minRank {
-				minRank = k
-			}
-			if k > MaxRank {
-				MaxRank = k
-			}
-		}
-
-		if len(in.rankCnt) == 2 { // 钢板
-			if minRank == poker.RANK_A {
-				if MaxRank == poker.RANK_2 { // AAA222
-					return &DeckPower{DeckStraightThree, int(poker.RANK_2), nil}
-				} else if MaxRank == poker.RANK_K { //KKKAAA
-					return &DeckPower{DeckStraightThree, int(poker.RANK_K) + 1, nil}
-				}
-			} else {
-				if minRank+1 == MaxRank {
-					return &DeckPower{DeckStraightThree, int(MaxRank), nil}
-				}
-			}
-		} else if len(in.rankCnt) == 3 { // 连对
-			if minRank == poker.RANK_3 {
-				if MaxRank == poker.RANK_2 { // AA2233
-					return &DeckPower{DeckStraightThree, int(poker.RANK_3), nil}
-				} else if MaxRank == poker.RANK_K { //QQKKAA
-					return &DeckPower{DeckStraightThree, int(poker.RANK_K) + 1, nil}
-				}
-			} else {
-				if minRank+2 == MaxRank {
-					return &DeckPower{DeckStraightPair, int(MaxRank), nil}
-				}
-			}
-		}
-	case 7:
-		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckBomb7, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
-		}
-	case 8:
-		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckBomb8, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
-		}
+	errpower := &DeckPower{
+		DeckType:  DeckPass,
+		DeckValue: 0,
 	}
-	return errpower
-}
-
-func getDeckPowerWith1Wildcard(in *info) *DeckPower {
-	errpower := &DeckPower{DeckPass, 0, nil}
 
 	switch in.cards.Size() {
 	case 2:
 		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckPair, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckPair, CardLogicValue(in.wildcard, in.normalCards.Front())}
 		}
 	case 3:
 		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckThree, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckThree, CardLogicValue(in.wildcard, in.normalCards.Front())}
 		}
 	case 4: // 4炸, 天王炸
 		if in.suitCnt[poker.JOKER] == 4 {
-			return &DeckPower{DeckBombJoker, 0, nil}
+			return &DeckPower{DeckBombJoker, 0}
 		}
 		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckBomb4, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckBomb4, CardLogicValue(in.wildcard, in.normalCards.Front())}
 		}
 	case 5: // 顺子, 同花顺, 5炸, 3带2
 		if len(in.rankCnt) == 1 { // 5炸
-			return &DeckPower{DeckBomb5, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckBomb5, CardLogicValue(in.wildcard, in.normalCards.Front())}
 		} else if len(in.rankCnt) == 2 { // 3带2
 			var rankA, rankB poker.CardRank = 0, 0
 			for k, v := range in.rankCnt {
@@ -282,37 +170,37 @@ func getDeckPowerWith1Wildcard(in *info) *DeckPower {
 				}
 			}
 			if rankA != 0 && rankB != 0 {
-				return &DeckPower{DeckThreeWithTwo, CardSingleCardPower(in.wildcard, poker.NewCard(1, poker.CardRank(rankA))), nil}
+				return &DeckPower{DeckThreeWithTwo, CardLogicValue(in.wildcard, poker.NewCard(1, poker.CardRank(rankA)))}
 			}
 		} else if len(in.rankCnt) == 5 { // 顺子
 			in.cards.SortByRank()
 			startRank := in.cards.Inner[0].Rank()
 			endRank := in.cards.Inner[4].Rank()
-			power := 0
+			power := uint8(0)
 			if endRank == poker.RANK_K && startRank == poker.RANK_A {
 				for i := 1; i < 4; i++ {
 					if in.cards.Inner[i].Rank()+5-poker.CardRank(i) != endRank {
 						return errpower
 					}
 				}
-				power = CardSingleCardPower(in.wildcard, poker.NewCard(1, poker.RANK_A))
+				power = CardLogicValue(in.wildcard, poker.NewCard(1, poker.RANK_A))
 			} else {
 				for i := 1; i < 5; i++ {
 					if startRank+poker.CardRank(i) != in.cards.Inner[i].Rank() {
 						return errpower
 					}
 				}
-				power = CardSingleCardPower(in.wildcard, poker.NewCard(1, endRank))
+				power = CardLogicValue(in.wildcard, poker.NewCard(1, endRank))
 			}
 			if len(in.suitCnt) == 1 {
-				return &DeckPower{DeckStraightFlush, power, nil}
+				return &DeckPower{DeckStraightFlush, power}
 			} else {
-				return &DeckPower{DeckStraight, power, nil}
+				return &DeckPower{DeckStraight, power}
 			}
 		}
 	case 6: // 连对, 钢板, 6炸
 		if len(in.rankCnt) == 1 { // 6炸
-			return &DeckPower{DeckBomb6, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckBomb6, CardLogicValue(in.wildcard, in.cards.Inner[0])}
 		}
 		var minRank, MaxRank = poker.RANK_K + 1, poker.CardRank(0)
 		for k, v := range in.rankCnt {
@@ -330,50 +218,53 @@ func getDeckPowerWith1Wildcard(in *info) *DeckPower {
 		if len(in.rankCnt) == 2 { // 钢板
 			if minRank == poker.RANK_A {
 				if MaxRank == poker.RANK_2 { // AAA222
-					return &DeckPower{DeckStraightThree, int(poker.RANK_2), nil}
+					return &DeckPower{DeckStraightThree, uint8(poker.RANK_2)}
 				} else if MaxRank == poker.RANK_K { //KKKAAA
-					return &DeckPower{DeckStraightThree, int(poker.RANK_K) + 1, nil}
+					return &DeckPower{DeckStraightThree, uint8(poker.RANK_K) + 1}
 				}
 			} else {
 				if minRank+1 == MaxRank {
-					return &DeckPower{DeckStraightThree, int(MaxRank), nil}
+					return &DeckPower{DeckStraightThree, uint8(MaxRank)}
 				}
 			}
 		} else if len(in.rankCnt) == 3 { // 连对
 			if minRank == poker.RANK_3 {
 				if MaxRank == poker.RANK_2 { // AA2233
-					return &DeckPower{DeckStraightThree, int(poker.RANK_3), nil}
+					return &DeckPower{DeckStraightThree, uint8(poker.RANK_3)}
 				} else if MaxRank == poker.RANK_K { //QQKKAA
-					return &DeckPower{DeckStraightThree, int(poker.RANK_K) + 1, nil}
+					return &DeckPower{DeckStraightThree, uint8(poker.RANK_K) + 1}
 				}
 			} else {
 				if minRank+2 == MaxRank {
-					return &DeckPower{DeckStraightPair, int(MaxRank), nil}
+					return &DeckPower{DeckStraightPair, uint8(MaxRank)}
 				}
 			}
 		}
 	case 7:
 		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckBomb7, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckBomb7, CardLogicValue(in.wildcard, in.cards.Inner[0])}
 		}
 	case 8:
 		if len(in.rankCnt) == 1 {
-			return &DeckPower{DeckBomb8, CardSingleCardPower(in.wildcard, in.cards.Inner[0]), nil}
+			return &DeckPower{DeckBomb8, CardLogicValue(in.wildcard, in.cards.Inner[0])}
 		}
 	}
 	return errpower
 }
 
 func getDeckPowerWith2Wildcard(i *info) *DeckPower {
-	return &DeckPower{DeckPass, 0, nil}
+	return &DeckPower{
+		DeckType:  DeckPass,
+		DeckValue: 0,
+	}
 }
 
-func GetDeckPower(wildcard poker.CardRank, cards *poker.Cards) *DeckPower {
-	errpower := &DeckPower{DeckPass, 0, nil}
+func GetDeckPower(wildcard poker.Card, cards *poker.Cards) *DeckPower {
+	errpower := &DeckPower{DeckPass, 0}
 	if cards.Size() == 0 {
 		return errpower
 	} else if cards.Size() == 1 {
-		return &DeckPower{DeckSingle, CardSingleCardPower(wildcard, cards.Inner[0]), nil}
+		return &DeckPower{DeckSingle, CardLogicValue(wildcard, cards.Inner[0])}
 	}
 
 	info := &info{
@@ -386,7 +277,7 @@ func GetDeckPower(wildcard poker.CardRank, cards *poker.Cards) *DeckPower {
 	}
 
 	for _, card := range cards.Inner {
-		if card.Rank() == wildcard {
+		if card == wildcard {
 			info.wildCards.Push(card)
 		} else {
 			info.normalCards.Push(card)
@@ -398,10 +289,6 @@ func GetDeckPower(wildcard poker.CardRank, cards *poker.Cards) *DeckPower {
 	switch info.wildCards.Size() {
 	case 0:
 		return getDeckPowerWithNoWildcard(info)
-	case 1:
-		return getDeckPowerWith1Wildcard(info)
-	case 2:
-		return getDeckPowerWith2Wildcard(info)
 	}
 	return errpower
 }

@@ -91,12 +91,61 @@ func TestRemoveCards(t *testing.T) {
 		t.Errorf("expected %d cards left in deck, got %d", decksize-int(dealcnt), deck.Size())
 	}
 }
+func TestSubCards(t *testing.T) {
+	deck1 := NewDeck()
+	deck2 := NewDeck()
+	deck1.Sub(deck2)
+	if deck1.Size() != 0 {
+		t.Errorf("expected deck1 size to be 0, got %d", deck1.Size())
+	}
+
+	deck1 = NewDeck()
+	deck2 = NewEmptyCards()
+	deck1.Sub(deck2)
+	if deck1.Size() != 54 {
+		t.Errorf("expected deck1 size to be 54, got %d", deck1.Size())
+	}
+
+	deck1 = NewDeck()
+	deck2 = NewDeck()
+	deck2.RemoveCard(deck2.Get(0))
+	deck1.Sub(deck2)
+	if deck1.Size() != 1 {
+		t.Errorf("expected deck1 size to be 1, got %d", deck1.Size())
+	}
+}
+
+func BenchmarkCardsSub(b *testing.B) {
+	deck2 := NewDeck()
+	deck2.Shuffle()
+	for i := 0; i < b.N; i++ {
+		deck1 := NewDeck()
+		deck1.Shuffle()
+		deck1.Sub(deck2)
+	}
+}
 
 func BenchmarkRemoveCards(b *testing.B) {
+	deck2 := NewDeck()
+	deck2.Shuffle()
 	for i := 0; i < b.N; i++ {
-		deck := NewDeck()
-		cardsToRemove := deck.DealCards(5)
-		deck.RemoveCards(cardsToRemove)
+		deck1 := NewDeck()
+		deck1.Shuffle()
+		deck1.RemoveCards(deck2)
+	}
+}
+
+func BenchmarkSortByRank(b *testing.B) {
+	cards := NewCards([]Card{ /* initialize with some cards */ })
+	for i := 0; i < b.N; i++ {
+		cards.SortByRank()
+	}
+}
+
+func BenchmarkSortBySuit(b *testing.B) {
+	cards := NewCards([]Card{ /* initialize with some cards */ })
+	for i := 0; i < b.N; i++ {
+		cards.SortBySuit()
 	}
 }
 

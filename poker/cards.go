@@ -14,7 +14,7 @@ import (
 // shuffle 洗牌
 
 func NewEmptyCards() *Cards {
-	return &Cards{Inner: make([]Card, 0, 54)}
+	return &Cards{Inner: []Card{}}
 }
 
 func NewCards(cards []Card) *Cards {
@@ -167,6 +167,33 @@ func (d *Cards) RemoveCards(cs *Cards) bool {
 	return ok
 }
 
+// 尽可能删除
+func (d *Cards) Sub(s *Cards) *Cards {
+	dm := d.ToMap()
+	for _, v := range s.Inner {
+		c, has := dm[v]
+		if !has {
+			continue
+		}
+		if c > 0 {
+			c = c - 1
+			dm[v] = c
+		}
+		if c == 0 {
+			delete(dm, v)
+		}
+	}
+
+	new := make([]Card, 0, len(dm))
+	for k, v := range dm {
+		for i := 0; i < v; i++ {
+			new = append(new, k)
+		}
+	}
+	d.Inner = new
+	return d
+}
+
 func (d *Cards) Clone() *Cards {
 	new := &Cards{Inner: make([]Card, len(d.Inner))}
 	copy(new.Inner, d.Inner)
@@ -229,32 +256,6 @@ func (d *Cards) IsEmpty() bool {
 	return len(d.Inner) == 0
 }
 
-func (d *Cards) Sub(s *Cards) *Cards {
-	dm := d.ToMap()
-	for _, v := range s.Inner {
-		c, has := dm[v]
-		if !has {
-			continue
-		}
-		if c > 0 {
-			c = c - 1
-			dm[v] = c
-		}
-		if c == 0 {
-			delete(dm, v)
-		}
-	}
-
-	new := make([]Card, 0, len(dm))
-	for k, v := range dm {
-		for i := 0; i < v; i++ {
-			new = append(new, k)
-		}
-	}
-	d.Inner = new
-	return d
-}
-
 // map with card as key and count as value
 func (d *Cards) ToMap() map[Card]int {
 	ret := make(map[Card]int, d.Size())
@@ -263,14 +264,3 @@ func (d *Cards) ToMap() map[Card]int {
 	}
 	return ret
 }
-
-// TODO:
-// 交集
-// func (d *Cards) Intersect(other *Cards) *Cards {
-// 	return nil
-// }
-// TODO:
-// 求相对补集  this - other, 即是返回在other中没有的元素, 如 i{1,2,3}, other{2,3}, return{1}
-// func (d *Cards) Complementary(other *Cards) *Cards {
-// 	return nil
-// }
