@@ -101,57 +101,57 @@ func TestGetDeckPowerWithNoWildcard(t *testing.T) {
 		{
 			name:     "Pair",
 			cardstr:  "H3 H3",
-			expected: &DeckPower{DeckPair, 3, nil},
+			expected: &DeckPower{DeckType: DeckPair, DeckValue: 3},
 		},
 		{
 			name:     "Three of a kind",
 			cardstr:  "S4 H4 C4",
-			expected: &DeckPower{DeckThree, 4, nil},
+			expected: &DeckPower{DeckType: DeckThree, DeckValue: 4},
 		},
 		{
 			name:     "Four of a kind",
 			cardstr:  "S5 H5 C5 D5",
-			expected: &DeckPower{DeckBomb4, 5, nil},
+			expected: &DeckPower{DeckType: DeckBomb4, DeckValue: 5},
 		},
 		{
 			name:     "Straight",
 			cardstr:  "S3 H4 C5 D6 S7",
-			expected: &DeckPower{DeckStraight, 7, nil},
+			expected: &DeckPower{DeckType: DeckStraight, DeckValue: 7},
 		},
 		{
 			name:     "Straight Flush",
 			cardstr:  "S3 S4 S5 S6 S7",
-			expected: &DeckPower{DeckStraightFlush, 7, nil},
+			expected: &DeckPower{DeckType: DeckStraightFlush, DeckValue: 7},
 		},
 		{
 			name:     "Three with Two",
 			cardstr:  "S8 H8 C8 D9 S9",
-			expected: &DeckPower{DeckThreeWithTwo, 8, nil},
+			expected: &DeckPower{DeckType: DeckThreeWithTwo, DeckValue: 8},
 		},
 		{
 			name:     "Three with Two error case",
 			cardstr:  "S9 H9 C9 D8 S7",
-			expected: &DeckPower{DeckPass, 0, nil},
+			expected: &DeckPower{DeckType: DeckPass, DeckValue: 0},
 		},
 		{
 			name:     "Invalid Straight",
 			cardstr:  "S3 H4 C5 D6 S8",
-			expected: &DeckPower{DeckPass, 0, nil},
+			expected: &DeckPower{DeckType: DeckPass, DeckValue: 0},
 		},
 		{
 			name:     "Six of a kind",
 			cardstr:  "S6 H6 C6 D6 S6 H6",
-			expected: &DeckPower{DeckBomb6, 6, nil},
+			expected: &DeckPower{DeckType: DeckBomb6, DeckValue: 6},
 		},
 		{
 			name:     "Seven of a kind",
 			cardstr:  "S7 H7 C7 D7 S7 H7 C7",
-			expected: &DeckPower{DeckBomb7, 7, nil},
+			expected: &DeckPower{DeckType: DeckBomb7, DeckValue: 7},
 		},
 		{
 			name:     "Eight of a kind",
 			cardstr:  "S8 H8 C8 D8 S8 H8 C8 D8",
-			expected: &DeckPower{DeckBomb8, 8, nil},
+			expected: &DeckPower{DeckType: DeckBomb8, DeckValue: 8},
 		},
 	}
 

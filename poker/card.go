@@ -137,7 +137,7 @@ func (cs CardSuit) Chinese() string {
 
 // ♣♦♥♠
 var Suits = []byte("?DCHSJ")
-var Ranks = []byte("?A234567890JQK")
+var Ranks = []byte("?A23456789TJQK")
 
 // NewCard by suit and rank
 func NewCard(suit CardSuit, rank CardRank) Card {
